@@ -1,0 +1,14 @@
+{
+  "item": {
+    "item": "chickens:fluid_egg",
+    "weight": 10,
+    "fluid": "minecraft:lava"
+  },
+  "interval": 600,
+  "count": [
+    1,
+    1
+  ],
+  "gain_multiplier": 0.2,
+  "tier": 1
+}

@@ -1,0 +1,16 @@
+{
+  "parents": [
+    "chickens:brown",
+    "chickens:glowstone"
+  ],
+  "results": [
+    {
+      "breed": "chickens:netherwart",
+      "weight": 0.9
+    },
+    {
+      "breed": "chickens:brown",
+      "weight": 0.1
+    }
+  ]
+}

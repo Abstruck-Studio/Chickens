@@ -1,0 +1,12 @@
+{
+  "item": {
+    "item": "minecraft:orange_dye",
+    "weight": 10
+  },
+  "interval": 600,
+  "count": [
+    1,
+    1
+  ],
+  "gain_multiplier": 0.2
+}

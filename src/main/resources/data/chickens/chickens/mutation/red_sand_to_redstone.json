@@ -1,0 +1,16 @@
+{
+  "parents": [
+    "chickens:red",
+    "chickens:sand"
+  ],
+  "results": [
+    {
+      "breed": "chickens:redstone",
+      "weight": 0.9
+    },
+    {
+      "breed": "chickens:red",
+      "weight": 0.1
+    }
+  ]
+}

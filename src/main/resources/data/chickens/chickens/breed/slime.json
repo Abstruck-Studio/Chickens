@@ -1,0 +1,13 @@
+{
+  "item": {
+    "item": "minecraft:slime_ball",
+    "weight": 10
+  },
+  "interval": 600,
+  "count": [
+    1,
+    1
+  ],
+  "gain_multiplier": 0.2,
+  "tier": 4
+}
