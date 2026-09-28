@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "minecraft:egg"
+    },
+    {
+      "item": "minecraft:gray_dye"
+    }
+  ],
+  "result": {
+    "id": "chickens:dye_egg",
+    "count": 1,
+    "components": {
+      "minecraft:dyed_color": {
+        "rgb": 4673362,
+        "show_in_tooltip": false
+      }
+    }
+  }
+}

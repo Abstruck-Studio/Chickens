@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "e",
+    "s",
+    "f"
+  ],
+  "key": {
+    "e": {
+      "item": "minecraft:egg"
+    },
+    "s": {
+      "item": "minecraft:stick"
+    },
+    "f": {
+      "item": "minecraft:feather"
+    }
+  },
+  "result": {
+    "id": "chickens:catcher",
+    "count": 1
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    { "item": "minecraft:egg" },
+    { "item": "minecraft:compass" }
+  ],
+  "result": { "id": "chickens:chicken_analyzer", "count": 1 }
+}

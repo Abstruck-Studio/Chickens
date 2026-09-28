@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "www",
+    "w w",
+    "hhh"
+  ],
+  "key": {
+    "w": {
+      "tag": "minecraft:planks"
+    },
+    "h": {
+      "item": "minecraft:hay_block"
+    }
+  },
+  "result": {
+    "id": "chickens:nest",
+    "count": 1
+  }
+}
