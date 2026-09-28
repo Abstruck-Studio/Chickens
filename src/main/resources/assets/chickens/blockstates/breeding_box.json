@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "facing=north,has_seeds=true,is_breeding=true": {
+      "model": "chickens:block/breeding_box_privacy",
+      "y": 0
+    },
+    "facing=east,has_seeds=true,is_breeding=true": {
+      "model": "chickens:block/breeding_box_privacy",
+      "y": 90
+    },
+    "facing=south,has_seeds=true,is_breeding=true": {
+      "model": "chickens:block/breeding_box_privacy",
+      "y": 180
+    },
+    "facing=west,has_seeds=true,is_breeding=true": {
+      "model": "chickens:block/breeding_box_privacy",
+      "y": 270
+    },
+    "facing=north,has_seeds=false,is_breeding=true": {
+      "model": "chickens:block/breeding_box_empty",
+      "y": 0
+    },
+    "facing=east,has_seeds=false,is_breeding=true": {
+      "model": "chickens:block/breeding_box_empty",
+      "y": 90
+    },
+    "facing=south,has_seeds=false,is_breeding=true": {
+      "model": "chickens:block/breeding_box_empty",
+      "y": 180
+    },
+    "facing=west,has_seeds=false,is_breeding=true": {
+      "model": "chickens:block/breeding_box_empty",
+      "y": 270
+    },
+    "facing=north,is_breeding=false": {
+      "model": "chickens:block/breeding_box",
+      "y": 0
+    },
+    "facing=east,is_breeding=false": {
+      "model": "chickens:block/breeding_box",
+      "y": 90
+    },
+    "facing=south,is_breeding=false": {
+      "model": "chickens:block/breeding_box",
+      "y": 180
+    },
+    "facing=west,is_breeding=false": {
+      "model": "chickens:block/breeding_box",
+      "y": 270
+    }
+  }
+}
