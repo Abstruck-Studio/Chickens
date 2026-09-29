@@ -18,7 +18,6 @@ public final class ChickenBreedBuilder {
     private final ResourceLocation item;
     private int itemWeight = 10;
     private Optional<ResourceLocation> texture = Optional.empty();
-    private int interval = 6000;
     private ChickenBreed.Count count = new ChickenBreed.Count(1, 1);
     private double gainMultiplier = 0.2;
     private final List<ChickenBreed.Product> byproducts = new java.util.ArrayList<>();
@@ -43,11 +42,6 @@ public final class ChickenBreedBuilder {
     /** 实体纹理（不含 .png 后缀），如 {@code chickens:entity/chicken/flint} */
     public ChickenBreedBuilder texture(ResourceLocation texture) {
         this.texture = Optional.of(texture);
-        return this;
-    }
-
-    public ChickenBreedBuilder interval(int ticks) {
-        this.interval = ticks;
         return this;
     }
 
@@ -91,7 +85,7 @@ public final class ChickenBreedBuilder {
     }
 
     public ChickenBreed build() {
-        return new ChickenBreed(new ChickenBreed.Product(item, itemWeight, mainFluid), texture, interval, count,
+        return new ChickenBreed(new ChickenBreed.Product(item, itemWeight, mainFluid), texture, count,
                 gainMultiplier, List.copyOf(byproducts), loot, tier);
     }
 }

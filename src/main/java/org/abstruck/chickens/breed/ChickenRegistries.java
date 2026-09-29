@@ -26,6 +26,11 @@ public final class ChickenRegistries {
     public static final ResourceKey<Registry<FluidEggEntry>> FLUID_EGG =
             ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "fluid_egg"));
 
+    /** chickens:spawn_rule —— 自然生成规则（维度 + 群系 + 品种权重）。
+     *  JSON：data/&lt;ns&gt;/chickens/spawn_rule/&lt;id&gt;.json；增量式，未命中规则则否决生成 */
+    public static final ResourceKey<Registry<SpawnRule>> SPAWN_RULE =
+            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "spawn_rule"));
+
     private ChickenRegistries() {
     }
 
@@ -37,5 +42,6 @@ public final class ChickenRegistries {
         event.dataPackRegistry(BREED, ChickenBreed.CODEC, ChickenBreed.CODEC);
         event.dataPackRegistry(MUTATION, MutationRule.CODEC, MutationRule.CODEC);
         event.dataPackRegistry(FLUID_EGG, FluidEggEntry.CODEC, FluidEggEntry.CODEC);
+        event.dataPackRegistry(SPAWN_RULE, SpawnRule.CODEC, SpawnRule.CODEC);
     }
 }

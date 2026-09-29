@@ -20,7 +20,6 @@ public record ChickenBreed(
          * 缺省时渲染器按约定路径 {@code textures/entity/chicken/&lt;品种id&gt;.png} 查找，找不到则回退原版鸡纹理。
          */
         Optional<ResourceLocation> texture,
-        int interval,
         Count count,
         double gainMultiplier,
         List<Product> byproducts,
@@ -32,7 +31,6 @@ public record ChickenBreed(
             (RecordCodecBuilder.Instance<ChickenBreed> instance) -> instance.group(
                     Product.CODEC.fieldOf("item").forGetter(ChickenBreed::item),
                     ResourceLocation.CODEC.optionalFieldOf("texture").forGetter(ChickenBreed::texture),
-                    Codec.INT.fieldOf("interval").forGetter(ChickenBreed::interval),
                     Count.CODEC.fieldOf("count").forGetter(ChickenBreed::count),
                     Codec.DOUBLE.optionalFieldOf("gain_multiplier", 0.2).forGetter(ChickenBreed::gainMultiplier),
                     Product.CODEC.listOf().optionalFieldOf("byproducts", List.of())

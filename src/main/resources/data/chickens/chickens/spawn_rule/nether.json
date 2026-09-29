@@ -1,0 +1,10 @@
+{
+  "dimension": "minecraft:the_nether",
+  "biomes": [
+    "#minecraft:is_nether"
+  ],
+  "chance": 0.25,
+  "breeds": [
+    { "breed": "chickens:quartz", "weight": 1 }
+  ]
+}

@@ -50,6 +50,13 @@ public class BreedingBoxBlock extends HorizontalDirectionalBlock implements Enti
         return simpleCodec(BreedingBoxBlock::new);
     }
 
+    /** 模型渲染交给 BER 统一光照（原版箱子同款 RenderShape）：围栏式模型的内壁
+     *  不再逐面取邻格光照（贴实体方块时对侧内壁会全黑） */
+    @Override
+    public net.minecraft.world.level.block.RenderShape getRenderShape(BlockState state) {
+        return net.minecraft.world.level.block.RenderShape.ENTITYBLOCK_ANIMATED;
+    }
+
     /** 21.1.252 的 HorizontalDirectionalBlock 没有放置逻辑（FACING 恒为默认 NORTH），
      *  这里按原版熔炉的写法：放置时正面朝向玩家 */
     @Override

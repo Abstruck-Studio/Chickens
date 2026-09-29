@@ -182,7 +182,12 @@ public class NestBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         int gain = stats != null ? stats.gain() : 1;
         int bonus = (int) Math.round(base * gain * breed.gainMultiplier());
         ItemStack stack = new ItemStack(item, Math.max(1, base + bonus));
-        product.fluid().ifPresent(fluidId -> stack.set(ModDataComponents.FLUID.get(), fluidId));
+        product.fluid().ifPresent(fluidId -> {
+            net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluid = BreedLookups.fluidHolderOf(access, fluidId);
+            if (fluid != null) {
+                stack.set(ModDataComponents.FLUID.get(), fluid);
+            }
+        });
         return stack;
     }
 

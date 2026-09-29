@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * 受精鸡蛋：繁殖改造（vanillaBreedingRework）开启时由鸡交配掉落，
- * 携带品种 + 三维属性组件。孵化（蛋巢）是阶段 5 的内容。
+ * 携带品种 + 三维属性组件。
  * 无品种组件 = 原版鸡的受精蛋。
  */
 public class FertileEggItem extends Item {

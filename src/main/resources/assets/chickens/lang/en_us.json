@@ -3,7 +3,6 @@
   "item.chickens.chicken": "Chicken",
   "item.chickens.catcher": "Chicken Catcher",
   "item.chickens.fertile_egg": "Fertile Egg",
-  "item.chickens.manure": "Chicken Manure",
   "item.chickens.chicken_analyzer": "Chicken Analyzer",
   "message.chickens.analyzer_header": "Breed: %s",
   "message.chickens.analyzer_next": "Next production: %s s",
@@ -68,9 +67,5 @@
   "item.chickens.dye_egg": "Dye Egg",
   "item.chickens.fluid_egg": "Fluid Egg",
   "jei.chickens.mutation": "Chicken Mutation",
-  "jei.chickens.produce": "Chicken Produce",
-  "jei.chickens.mutation.results": "Mutation results:",
-  "jei.chickens.mutation.chance": "%s: %s",
-  "jei.chickens.produce.main": "Main product (weight %s × strength)",
-  "jei.chickens.produce.byproduct": "Byproduct (weight %s)"
+  "jei.chickens.produce": "Chicken Produce"
 }

@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#chickens:spawnable_biomes",
+  "spawners": {
+    "type": "chickens:resource_chicken",
+    "weight": 25,
+    "minCount": 1,
+    "maxCount": 1
+  }
+}

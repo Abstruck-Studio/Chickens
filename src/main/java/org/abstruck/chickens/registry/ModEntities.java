@@ -28,7 +28,7 @@ public final class ModEntities {
                     () -> EntityType.Builder.of(ResourceChicken::new, MobCategory.CREATURE)
                             .sized(0.4F, 0.7F).canSpawnFarFromPlayer().build("resource_chicken"));
 
-    /** 染料蛋投掷实体（阶段 6.14：16 色染料鸡） */
+    /** 染料蛋投掷实体 */
     public static final DeferredHolder<EntityType<?>, EntityType<ThrownDyeEgg>> THROWN_DYE_EGG =
             ENTITY_TYPES.register("thrown_dye_egg",
                     () -> EntityType.Builder.<ThrownDyeEgg>of(ThrownDyeEgg::new, MobCategory.MISC)
@@ -43,14 +43,15 @@ public final class ModEntities {
     }
 
     /** 生成位置规则。单一实体类型按维度分流谓词：
-     *  主世界 creature 通道用动物款（要求明亮）；下界 monster 通道用怪物款（要求黑暗，
+     *  主世界 creature 通道用动物款（要求明亮）；下界/末地 monster 通道用怪物款（要求黑暗，
      *  不带 PEACEFUL 检查——用户要求和平模式也生成，配合防消失 override） */
     public static void registerSpawnPlacements(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent event) {
         event.register(RESOURCE_CHICKEN.get(), net.minecraft.world.entity.SpawnPlacementTypes.ON_GROUND,
                 net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 (type, level, spawnType, pos, random) -> {
                     if (level instanceof net.minecraft.server.level.ServerLevel serverLevel
-                            && serverLevel.dimension() == net.minecraft.world.level.Level.NETHER) {
+                            && (serverLevel.dimension() == net.minecraft.world.level.Level.NETHER
+                            || serverLevel.dimension() == net.minecraft.world.level.Level.END)) {
                         return net.minecraft.world.entity.monster.Monster.isDarkEnoughToSpawn(serverLevel, pos, random);
                     }
                     return net.minecraft.world.entity.animal.Animal.checkAnimalSpawnRules(type, level, spawnType, pos, random);

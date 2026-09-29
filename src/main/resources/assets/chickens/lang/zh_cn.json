@@ -3,7 +3,6 @@
   "item.chickens.chicken": "鸡",
   "item.chickens.catcher": "鸡捕手",
   "item.chickens.fertile_egg": "受精鸡蛋",
-  "item.chickens.manure": "鸡粪",
   "item.chickens.chicken_analyzer": "鸡分析器",
   "message.chickens.analyzer_header": "品种：%s",
   "message.chickens.analyzer_next": "距下次产出：%s 秒",
@@ -68,9 +67,5 @@
   "item.chickens.dye_egg": "染料蛋",
   "item.chickens.fluid_egg": "流体蛋",
   "jei.chickens.mutation": "鸡杂交",
-  "jei.chickens.produce": "鸡产出",
-  "jei.chickens.mutation.results": "杂交结果：",
-  "jei.chickens.mutation.chance": "%s：%s",
-  "jei.chickens.produce.main": "主产物（权重 %s × 力量）",
-  "jei.chickens.produce.byproduct": "副产物（权重 %s）"
+  "jei.chickens.produce": "鸡产出"
 }

@@ -61,8 +61,8 @@ public class ChickensJeiPlugin implements IModPlugin {
             return breed != null ? breed.toString() : "vanilla";
         }));
         registration.registerSubtypeInterpreter(ModItems.FLUID_EGG.get(), interpreter((ItemStack stack, UidContext context) -> {
-            ResourceLocation fluid = stack.get(ModDataComponents.FLUID.get());
-            return fluid != null ? fluid.toString() : "empty";
+            net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluid = stack.get(ModDataComponents.FLUID.get());
+            return fluid != null ? fluid.unwrapKey().map(k -> k.location().toString()).orElse("unknown") : "empty";
         }));
         registration.registerSubtypeInterpreter(ModItems.DYE_EGG.get(), interpreter((ItemStack stack, UidContext context) -> {
             DyedItemColor color = stack.get(net.minecraft.core.component.DataComponents.DYED_COLOR);
@@ -99,9 +99,12 @@ public class ChickensJeiPlugin implements IModPlugin {
                 extras.add(stack);
             }
             for (var entry : BreedLookups.fluidEggRegistry(access)) {
-                ItemStack stack = new ItemStack(ModItems.FLUID_EGG.get());
-                stack.set(ModDataComponents.FLUID.get(), entry.fluid());
-                extras.add(stack);
+                net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluid = BreedLookups.fluidHolderOf(access, entry.fluid());
+                if (fluid != null) {
+                    ItemStack stack = new ItemStack(ModItems.FLUID_EGG.get());
+                    stack.set(ModDataComponents.FLUID.get(), fluid);
+                    extras.add(stack);
+                }
             }
         }
         for (DyeColor dye : DyeColor.values()) {
@@ -244,7 +247,12 @@ public class ChickensJeiPlugin implements IModPlugin {
     private static ItemStack productStack(RegistryAccess access, ChickenBreed.Product product) {
         ItemStack stack = itemStack(access, product.item());
         if (!stack.isEmpty()) {
-            product.fluid().ifPresent(fluid -> stack.set(ModDataComponents.FLUID.get(), fluid));
+            product.fluid().ifPresent(fluid -> {
+                net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> holder = BreedLookups.fluidHolderOf(access, fluid);
+                if (holder != null) {
+                    stack.set(ModDataComponents.FLUID.get(), holder);
+                }
+            });
         }
         return stack;
     }

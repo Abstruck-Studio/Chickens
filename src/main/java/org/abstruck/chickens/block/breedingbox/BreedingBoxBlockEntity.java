@@ -171,7 +171,7 @@ public class BreedingBoxBlockEntity extends net.minecraft.world.level.block.enti
                 return;
             }
         }
-        // 输出满：掉在地上（与阶段 5 巢箱行为一致）
+        // 输出满：掉在地上
         if (this.level != null) {
             Block.popResource(this.level, this.worldPosition, stack);
         }

@@ -2,6 +2,8 @@ package org.abstruck.chickens.registry;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredItem;
 import org.abstruck.chickens.Chickens;
 import org.abstruck.chickens.item.AnalyzerItem;
@@ -9,6 +11,7 @@ import org.abstruck.chickens.item.ChickenCatcherItem;
 import org.abstruck.chickens.item.ChickenItem;
 import org.abstruck.chickens.item.DyeEggItem;
 import org.abstruck.chickens.item.FertileEggItem;
+import org.abstruck.chickens.item.FluidEggFluidHandler;
 import org.abstruck.chickens.item.FluidEggItem;
 
 /**
@@ -28,10 +31,6 @@ public final class ModItems {
     public static final DeferredItem<Item> FERTILE_EGG =
             Chickens.ITEMS.register("fertile_egg", () -> new FertileEggItem(new Item.Properties()));
 
-    /** 鸡粪（阶段 5 巢箱产出；阶段 7 粪肥能源链的原料） */
-    public static final DeferredItem<Item> MANURE =
-            Chickens.ITEMS.register("manure", () -> new Item(new Item.Properties()));
-
     /** 方块物品（21.1.252 的 DeferredRegister.Blocks 不会自动注册，必须显式注册） */
     public static final DeferredItem<Item> BREEDING_BOX =
             Chickens.ITEMS.register("breeding_box", () -> new BlockItem(ModBlocks.BREEDING_BOX.get(), new Item.Properties()));
@@ -47,7 +46,7 @@ public final class ModItems {
             Chickens.ITEMS.register("chicken_analyzer", () -> new AnalyzerItem(new Item.Properties()));
 
     /** 流体蛋：统一的水蛋/岩浆蛋/自定义流体蛋，流体类型存 {@code chickens:fluid} 组件；
-     *  右键方块倒出流体源（不能装）。流体-颜色表在配置文件 fluidEggs 里 */
+     *  右键方块倒出流体源（不能装）。颜色由数据包注册表 {@code chickens:fluid_egg} 定义 */
     public static final DeferredItem<Item> FLUID_EGG =
             Chickens.ITEMS.register("fluid_egg", () -> new FluidEggItem(new Item.Properties().stacksTo(64)));
 
@@ -57,6 +56,13 @@ public final class ModItems {
 
     /** 触发类初始化（无实际逻辑） */
     public static void init() {
+    }
+
+    /** 物品能力注册：流体蛋暴露物品流体能力（IFluidHandlerItem），
+     *  储罐类方块（Create 分液池、各类流体储罐）经 FluidUtil 读取即可倒入 */
+    public static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerItem(Capabilities.FluidHandler.ITEM,
+                (stack, ctx) -> new FluidEggFluidHandler(stack), FLUID_EGG.get());
     }
 
     private ModItems() {

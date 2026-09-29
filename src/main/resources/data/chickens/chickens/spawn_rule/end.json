@@ -1,0 +1,10 @@
+{
+  "dimension": "minecraft:the_end",
+  "biomes": [
+    "#minecraft:is_end"
+  ],
+  "chance": 0.25,
+  "breeds": [
+    { "breed": "chickens:ender", "weight": 1 }
+  ]
+}

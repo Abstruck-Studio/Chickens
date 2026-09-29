@@ -6,8 +6,10 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.material.Fluid;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -41,6 +43,10 @@ public final class BreedLookups {
         return access.registryOrThrow(ChickenRegistries.FLUID_EGG);
     }
 
+    public static Registry<SpawnRule> spawnRuleRegistry(RegistryAccess access) {
+        return access.registryOrThrow(ChickenRegistries.SPAWN_RULE);
+    }
+
     /** 查流体蛋的渲染颜色（注册表里找不到返回空——渲染回退不透明白） */
     public static OptionalInt colorOfFluid(RegistryAccess access, ResourceLocation fluidId) {
         Registry<FluidEggEntry> registry = fluidEggRegistry(access);
@@ -50,6 +56,19 @@ public final class BreedLookups {
             }
         }
         return OptionalInt.empty();
+    }
+
+    /** 把品种 JSON 里的流体 id 解析成 Holder<Fluid>（写入 chickens:fluid 组件用）；
+     *  解析失败返回 null 并记日志。RegistryAccess 与 TAB 事件的 holders 都实现了 Provider。 */
+    public static net.minecraft.core.Holder<Fluid> fluidHolderOf(net.minecraft.core.HolderLookup.Provider provider, ResourceLocation fluidId) {
+        net.minecraft.core.Holder<Fluid> holder = provider.lookupOrThrow(Registries.FLUID)
+                .get(ResourceKey.create(Registries.FLUID, fluidId))
+                .orElse(null);
+        if (holder == null || holder.value() == net.minecraft.world.level.material.Fluids.EMPTY) {
+            LOGGER.warn("[chickens] 品种引用了不存在的流体: {}", fluidId);
+            return null;
+        }
+        return holder;
     }
 
     /** 把品种里的物品 id 解析成 Item；解析失败返回 null 并记日志。 */
@@ -150,5 +169,61 @@ public final class BreedLookups {
             }
         }
         return Optional.of(list.get(list.size() - 1).breed());
+    }
+
+    // ---------- 自然生成规则（chickens:spawn_rule） ----------
+
+    /** 按自然生成规则抽取品种：合并维度+群系全部命中规则的权重后抽取；
+     *  密度由命中规则的 chance（取最小，瓶颈语义）控制——未通过密度判定或无命中
+     *  都返回 Optional.empty()（调用方否决该次生成）。 */
+    public static Optional<ResourceLocation> pickSpawnBreed(
+            RegistryAccess access, ResourceLocation dimension,
+            net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biome, RandomSource random) {
+        List<SpawnRule.WeightedBreed> pool = new ArrayList<>();
+        double chance = 1.0;
+        for (SpawnRule rule : spawnRuleRegistry(access)) {
+            if (matchesDimension(rule, dimension) && matchesBiome(rule, biome)) {
+                pool.addAll(rule.breeds());
+                chance = Math.min(chance, rule.chance().orElse(1.0));
+            }
+        }
+        if (pool.isEmpty() || chance <= 0.0 || random.nextDouble() >= chance) {
+            return Optional.empty();
+        }
+        double total = pool.stream().mapToDouble(SpawnRule.WeightedBreed::weight).sum();
+        double roll = random.nextDouble() * total;
+        for (SpawnRule.WeightedBreed entry : pool) {
+            roll -= entry.weight();
+            if (roll < 0) {
+                return Optional.of(entry.breed());
+            }
+        }
+        return Optional.of(pool.get(pool.size() - 1).breed());
+    }
+
+    /** 维度过滤：规则缺省 = 任意维度 */
+    private static boolean matchesDimension(SpawnRule rule, ResourceLocation dimension) {
+        return rule.dimension().isEmpty() || rule.dimension().get().equals(dimension);
+    }
+
+    /** 群系过滤：规则 biomes 为空 = 任意群系；元素以 # 开头是标签，否则是群系 id */
+    private static boolean matchesBiome(SpawnRule rule, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biome) {
+        if (rule.biomes().isEmpty()) {
+            return true;
+        }
+        for (String entry : rule.biomes()) {
+            if (entry.startsWith("#")) {
+                TagKey<net.minecraft.world.level.biome.Biome> tag = TagKey.create(
+                        Registries.BIOME, ResourceLocation.parse(entry.substring(1)));
+                if (biome.is(tag)) {
+                    return true;
+                }
+            } else if (biome.unwrapKey()
+                    .map(key -> key.location().equals(ResourceLocation.parse(entry)))
+                    .orElse(false)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

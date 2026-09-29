@@ -3,8 +3,7 @@ package org.abstruck.chickens.config;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * 模组配置骨架。阶段 2 只放顶层开关与全局乘数，
- * 后续阶段（4 繁殖 / 5 孵化 / 6 设施 / 7 能源）按需补细节。
+ * 模组配置：繁殖改造开关、产出乘数、设施节奏与幼年成长时间。
  */
 public final class ChickenConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
@@ -14,7 +13,7 @@ public final class ChickenConfig {
             .define("mutationEnabled", true);
 
     public static final ModConfigSpec.BooleanValue VANILLA_BREEDING_REWORK = BUILDER
-            .comment("鸡交配时不再直接生成幼体，改为掉落受精蛋（阶段 4 生效）")
+            .comment("鸡交配时不再直接生成幼体，改为掉落受精蛋")
             .define("vanillaBreedingRework", false);
 
     public static final ModConfigSpec.DoubleValue PRODUCTION_INTERVAL_MULTIPLIER = BUILDER

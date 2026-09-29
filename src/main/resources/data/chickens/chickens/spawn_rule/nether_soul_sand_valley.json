@@ -1,0 +1,9 @@
+{
+  "dimension": "minecraft:the_nether",
+  "biomes": [
+    "minecraft:soul_sand_valley"
+  ],
+  "breeds": [
+    { "breed": "chickens:soul_sand", "weight": 1 }
+  ]
+}

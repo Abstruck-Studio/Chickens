@@ -1,6 +1,5 @@
 package org.abstruck.chickens;
 
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -12,13 +11,12 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.abstruck.chickens.breed.BreedLookups;
 import org.abstruck.chickens.breed.ChickenRegistries;
 import org.abstruck.chickens.config.ChickenConfig;
-import org.abstruck.chickens.datagen.EmptyStructureProvider;
 import org.abstruck.chickens.entity.chicken.BreedingEvents;
 import org.abstruck.chickens.registry.ModBlockEntities;
 import org.abstruck.chickens.registry.ModBlocks;
@@ -58,14 +56,16 @@ public class Chickens {
         ModItems.init();
         ModBlocks.init();
 
-        // 数据包注册表：chickens:breed（品种）与 chickens:mutation（杂交规则），带客户端同步
+        // 数据包注册表：breed（品种）/ mutation（杂交）/ fluid_egg（流体蛋）/ spawn_rule（自然生成），带客户端同步
         modEventBus.addListener(ChickenRegistries::registerDataPackRegistries);
 
         // 实体属性（继承原版鸡）
         modEventBus.addListener(ModEntities::registerAttributes);
 
-        // 蛋巢/巢箱的物品能力（漏斗/管道兼容）
+        // 繁殖箱/培育箱/鸡窝的物品能力（漏斗/管道兼容）
         modEventBus.addListener(ModBlockEntities::registerCapabilities);
+        // 流体蛋的物品流体能力（储罐类方块兼容）
+        modEventBus.addListener(ModItems::registerCapabilities);
 
         // 品种 Tab 内容（需要注册表，只能在事件里填）
         modEventBus.addListener(Chickens::addTabContents);
@@ -76,9 +76,6 @@ public class Chickens {
         // 游戏事件：繁殖改造（掉受精蛋）、自然生成品种分配
         NeoForge.EVENT_BUS.register(BreedingEvents.class);
         NeoForge.EVENT_BUS.register(org.abstruck.chickens.entity.chicken.ChickenSpawnEvents.class);
-
-        // datagen
-        modEventBus.addListener(this::gatherData);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, ChickenConfig.SPEC);
     }
@@ -97,9 +94,13 @@ public class Chickens {
         event.getParameters().holders().lookupOrThrow(ChickenRegistries.FLUID_EGG).listElements()
                 .map(net.minecraft.core.Holder::value)
                 .forEach(entry -> {
-                    ItemStack fluidEgg = new ItemStack(ModItems.FLUID_EGG.get());
-                    fluidEgg.set(ModDataComponents.FLUID.get(), entry.fluid());
-                    event.accept(fluidEgg);
+                    net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluid =
+                            BreedLookups.fluidHolderOf(event.getParameters().holders(), entry.fluid());
+                    if (fluid != null) {
+                        ItemStack fluidEgg = new ItemStack(ModItems.FLUID_EGG.get());
+                        fluidEgg.set(ModDataComponents.FLUID.get(), fluid);
+                        event.accept(fluidEgg);
+                    }
                 });
         // 16 种染色蛋（每色一条目，rgb 统一截断低 24 位与配方一致）
         for (net.minecraft.world.item.DyeColor dye : net.minecraft.world.item.DyeColor.values()) {
@@ -123,7 +124,4 @@ public class Chickens {
                 });
     }
 
-    private void gatherData(GatherDataEvent event) {
-        event.addProvider(new EmptyStructureProvider(event.getGenerator().getPackOutput()));
-    }
 }

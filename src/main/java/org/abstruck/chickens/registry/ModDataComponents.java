@@ -5,6 +5,8 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.abstruck.chickens.Chickens;
@@ -38,11 +40,12 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build());
 
-    /** 流体蛋上的流体引用：渲染颜色与倒出液体都由它决定 */
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> FLUID =
-            DATA_COMPONENTS.register("fluid", () -> DataComponentType.<ResourceLocation>builder()
-                    .persistent(ResourceLocation.CODEC)
-                    .networkSynchronized(ResourceLocation.STREAM_CODEC)
+    /** 流体蛋上的流体（Holder<Fluid>，原版 potion_contents 同款——组件值必须实现 equals/hashCode，
+     *  FluidStack 不满足会被 NeoForge 组件校验拒绝）：渲染颜色、倒出液体与物品流体能力都由它决定 */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<net.minecraft.core.Holder<Fluid>>> FLUID =
+            DATA_COMPONENTS.register("fluid", () -> DataComponentType.<net.minecraft.core.Holder<Fluid>>builder()
+                    .persistent(FluidStack.FLUID_NON_EMPTY_CODEC)
+                    .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.holderRegistry(Registries.FLUID))
                     .build());
 
     private ModDataComponents() {

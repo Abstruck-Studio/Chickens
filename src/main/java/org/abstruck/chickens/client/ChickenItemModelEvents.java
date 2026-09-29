@@ -37,6 +37,17 @@ public final class ChickenItemModelEvents {
         event.registerItem(ChickenItemClientExtensions.INSTANCE, ModItems.CHICKEN.get());
     }
 
+    /** 三个设施方块的渲染层：模型由 BER（ChickenBoxRenderer）在 cutoutMipped 层统一光照渲染 */
+    @SubscribeEvent
+    public static void onClientSetup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+        net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
+                org.abstruck.chickens.registry.ModBlocks.BREEDING_BOX.get(), net.minecraft.client.renderer.RenderType.cutoutMipped());
+        net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
+                org.abstruck.chickens.registry.ModBlocks.GROWER.get(), net.minecraft.client.renderer.RenderType.cutoutMipped());
+        net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
+                org.abstruck.chickens.registry.ModBlocks.NEST.get(), net.minecraft.client.renderer.RenderType.cutoutMipped());
+    }
+
     /** 繁殖箱 / 培育箱 / 鸡窝界面 */
     @SubscribeEvent
     public static void registerMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
@@ -55,7 +66,13 @@ public final class ChickenItemModelEvents {
             return color != null ? 0xFF000000 | color.rgb() : 0xFFFFFFFF;
         }, ModItems.DYE_EGG.get());
         event.register((stack, tintIndex) -> {
-            net.minecraft.resources.ResourceLocation fluidId = stack.get(ModDataComponents.FLUID.get());
+            net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluidHolder =
+                    stack.get(ModDataComponents.FLUID.get());
+            if (fluidHolder == null) {
+                return 0xFFFFFFFF;
+            }
+            net.minecraft.resources.ResourceLocation fluidId =
+                    fluidHolder.unwrapKey().map(net.minecraft.resources.ResourceKey::location).orElse(null);
             if (fluidId == null) {
                 return 0xFFFFFFFF;
             }

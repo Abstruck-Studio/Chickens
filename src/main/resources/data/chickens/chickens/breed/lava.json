@@ -4,7 +4,6 @@
     "weight": 10,
     "fluid": "minecraft:lava"
   },
-  "interval": 600,
   "count": [
     1,
     1

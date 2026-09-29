@@ -1,0 +1,11 @@
+{
+  "dimension": "minecraft:overworld",
+  "biomes": [
+    "#minecraft:is_overworld"
+  ],
+  "breeds": [
+    { "breed": "chickens:flint", "weight": 1 },
+    { "breed": "chickens:log", "weight": 1 },
+    { "breed": "chickens:sand", "weight": 1 }
+  ]
+}

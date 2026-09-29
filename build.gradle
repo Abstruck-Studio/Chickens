@@ -18,7 +18,8 @@ repositories {
 }
 
 base {
-    archivesName = mod_id
+    // 导出产物名：Chickens-Neo-<MC版本>-<mod_version>，如 Chickens-Neo-1.21.1-1.0.jar
+    archivesName = "Chickens-Neo-" + minecraft_version
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)

@@ -49,6 +49,25 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         super(type, level);
     }
 
+    /**
+     * 击杀掉落：品种 JSON 写了 loot 字段就用品种的掉落表；
+     * 否则回退原版鸡掉落表（与原版鸡完全相同：生鸡肉 1 个、羽毛 0~2 个、
+     * 火焰烧熟、抢夺加成——全部由原版数据包的 chicken 战利品表驱动）。
+     * 注意 1.21.1 实体未指定掉落表时懒生成 <命名空间>:entities/<实体名>
+     * （chickens:entities/resource_chicken 不存在 → 无掉落），必须显式指向原版表。
+     */
+    @Override
+    protected net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable> getDefaultLootTable() {
+        ChickenBreed breed = this.getBreed(this.level().registryAccess());
+        if (breed != null && breed.loot().isPresent()) {
+            return net.minecraft.resources.ResourceKey.create(
+                    net.minecraft.core.registries.Registries.LOOT_TABLE, breed.loot().get());
+        }
+        return net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.LOOT_TABLE,
+                ResourceLocation.fromNamespaceAndPath("minecraft", "entities/chicken"));
+    }
+
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
@@ -124,20 +143,16 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         }
     }
 
-    /** 测试/调试用：直接设定产出倒计时（tick）。 */
-    public void setProductionTimer(int ticks) {
-        this.productionTimer = ticks;
-    }
-
     /** 距下次产出的剩余 tick（鸡分析器用） */
     public int getProductionTimer() {
         return this.productionTimer;
     }
 
-    /** 基础间隔 × 全局乘数 ÷ (1 + growth × 系数)，下限 1 秒。 */
+    /** 产出间隔：原版鸡下蛋同款随机（6000~11999 tick，5~10 分钟）÷ (1 + growth × 系数)，下限 1 秒。
+     *  注意：实体鸡的产出节奏与原版鸡一致，不再读品种 JSON 的 interval
+     *  （interval 只影响鸡窝方块）；growth 加速与全局乘数保留。 */
     private int computeProductionInterval() {
-        ChickenBreed breed = this.getBreed(this.level().registryAccess());
-        double base = breed != null ? breed.interval() : 6000;
+        double base = this.random.nextInt(6000) + 6000; // 原版 Chicken.eggTime 同款随机
         double growthFactor = 1.0 + this.getGrowth() * ChickenConfig.GROWTH_INTERVAL_FACTOR.get();
         return Math.max(20, (int) Math.round(base * ChickenConfig.PRODUCTION_INTERVAL_MULTIPLIER.get() / growthFactor));
     }
@@ -158,7 +173,12 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         int bonus = (int) Math.round(base * this.getGain() * breed.gainMultiplier());
         int count = Math.max(1, base + bonus);
         ItemStack stack = new ItemStack(item, count);
-        product.fluid().ifPresent(fluidId -> stack.set(ModDataComponents.FLUID.get(), fluidId));
+        product.fluid().ifPresent(fluidId -> {
+            net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluid = BreedLookups.fluidHolderOf(access, fluidId);
+            if (fluid != null) {
+                stack.set(ModDataComponents.FLUID.get(), fluid);
+            }
+        });
         this.spawnAtLocation(stack);
         this.playSound(SoundEvents.CHICKEN_EGG, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
     }
@@ -177,7 +197,9 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
      */
     @Override
     public float getWalkTargetValue(net.minecraft.core.BlockPos pos, net.minecraft.world.level.LevelReader level) {
-        if (level instanceof ServerLevel serverLevel && serverLevel.dimension() == net.minecraft.world.level.Level.NETHER) {
+        if (level instanceof ServerLevel serverLevel
+                && (serverLevel.dimension() == net.minecraft.world.level.Level.NETHER
+                || serverLevel.dimension() == net.minecraft.world.level.Level.END)) {
             return 0.0F;
         }
         return super.getWalkTargetValue(pos, level);
@@ -198,7 +220,7 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         return Component.translatable("breed.chickens." + this.getBreedId().getPath());
     }
 
-    // ---------- 繁殖遗传（阶段 4：同品种升级、异品种 mutation、杂交重置属性） ----------
+    // ---------- 繁殖遗传（同品种升级、异品种 mutation、杂交重置属性） ----------
 
     @Override
     public ResourceChicken getBreedOffspring(ServerLevel level, AgeableMob otherParent) {
