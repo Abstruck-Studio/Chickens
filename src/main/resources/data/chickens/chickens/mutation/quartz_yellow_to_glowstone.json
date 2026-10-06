@@ -6,11 +6,11 @@
   "results": [
     {
       "breed": "chickens:glowstone",
-      "weight": 0.9
+      "weight": 0.8
     },
     {
-      "breed": "chickens:quartz",
-      "weight": 0.1
+      "breed": "chickens:yellow",
+      "weight": 0.2
     }
   ]
 }

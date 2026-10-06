@@ -6,10 +6,14 @@
   "results": [
     {
       "breed": "chickens:pink",
-      "weight": 0.9
+      "weight": 0.8
     },
     {
       "breed": "chickens:red",
+      "weight": 0.1
+    },
+    {
+      "breed": "chickens:white",
       "weight": 0.1
     }
   ]

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "#chickens:log_chicken",
+    "chickens:sand"
+  ],
+  "results": [
+    {
+      "breed": "chickens:bamboo",
+      "weight": 0.8
+    },
+    {
+      "breed": "$parent:log_chicken",
+      "weight": 0.1
+    },
+    {
+      "breed": "chickens:sand",
+      "weight": 0.1
+    }
+  ]
+}

@@ -23,8 +23,7 @@ import org.abstruck.chickens.registry.ModItems;
 
 /**
  * 培育箱方块实体：幼年鸡槽 + 种子槽 + 成年鸡输出槽。
- * 幼鸡 + 种子 + 输出空 → 爱心进度（30 秒）→ 幼鸡变**成年物品鸡**（保留品种/属性），消耗 1 种子。
- * 放入成年鸡无反应（输入槽只收幼年鸡）。
+ * 幼鸡 + 种子 + 输出可放 → 爱心进度（30 秒）→ 幼鸡变成年物品鸡（保留品种/属性），消耗 1 种子。
  */
 public class GrowerBlockEntity extends net.minecraft.world.level.block.entity.BlockEntity {
     public static final int CHICKEN_IN = 0;
@@ -100,7 +99,7 @@ public class GrowerBlockEntity extends net.minecraft.world.level.block.entity.Bl
         }
     }
 
-    /** 输出槽为空，或已有同品种同组件的成年鸡且未满堆叠上限 → 可继续培育（同品种鸡在输出槽堆叠） */
+    /** 输出槽为空，或已有同品种同组件的成年鸡且未满堆叠 → 可继续培育 */
     private boolean canGrow() {
         if (this.items.getStackInSlot(CHICKEN_IN).isEmpty() || this.items.getStackInSlot(SEEDS).isEmpty()) {
             return false;
@@ -112,7 +111,7 @@ public class GrowerBlockEntity extends net.minecraft.world.level.block.entity.Bl
         ItemStack baby = this.items.getStackInSlot(CHICKEN_IN);
         Boolean babyMature = baby.get(ModDataComponents.MATURE.get());
         boolean babyIsBaby = babyMature != null && !babyMature;
-        // 输出槽里的成年鸡必须与输入幼鸡同品种同组件（含品种/属性），否则等玩家取走
+        // 输入幼鸡转成年态后与输出槽比较（同组件才可合并堆叠）
         ItemStack expected = baby.copyWithCount(1);
         expected.set(ModDataComponents.MATURE.get(), true);
         return babyIsBaby && ItemStack.isSameItemSameComponents(out, expected)
@@ -125,14 +124,14 @@ public class GrowerBlockEntity extends net.minecraft.world.level.block.entity.Bl
             return;
         }
         ItemStack adult = baby.copyWithCount(1);
-        adult.set(ModDataComponents.MATURE.get(), true); // 成年
+        adult.set(ModDataComponents.MATURE.get(), true);
         this.items.getStackInSlot(SEEDS).shrink(1);
         baby.shrink(1);
         ItemStack out = this.items.getStackInSlot(CHICKEN_OUT);
         if (out.isEmpty()) {
             this.items.setStackInSlot(CHICKEN_OUT, adult);
         } else {
-            out.grow(1); // 同品种成年鸡堆叠（canGrow 已保证同组件且未满）
+            out.grow(1); // canGrow 已保证同组件且未满
         }
         this.setChanged();
     }
@@ -166,7 +165,7 @@ public class GrowerBlockEntity extends net.minecraft.world.level.block.entity.Bl
         this.progress = tag.getInt("Progress");
     }
 
-    /** 服务端数据变化后把完整数据同步给客户端（BER 渲染鸡依赖客户端槽位数据） */
+    /** 数据变化后同步完整数据给客户端（BER 渲染鸡依赖客户端槽位数据） */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);

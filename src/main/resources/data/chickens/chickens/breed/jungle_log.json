@@ -1,0 +1,23 @@
+{
+  "item": {
+    "item": "minecraft:jungle_log",
+    "weight": 10
+  },
+  "count": [
+    1,
+    1
+  ],
+  "gain_multiplier": 0.2,
+  "byproducts": [
+    {
+      "item": "minecraft:jungle_sapling",
+      "weight": 30
+    },
+    {
+      "item": "minecraft:jungle_leaves",
+      "weight": 10
+    }
+  ],
+  "tier": 2,
+  "tags": "#chickens:log_chicken"
+}

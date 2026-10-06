@@ -1,0 +1,16 @@
+{
+  "parents": [
+    "chickens:oak_log",
+    "chickens:cyan"
+  ],
+  "results": [
+    {
+      "breed": "chickens:warped_stem",
+      "weight": 0.8
+    },
+    {
+      "breed": "chickens:cyan",
+      "weight": 0.2
+    }
+  ]
+}

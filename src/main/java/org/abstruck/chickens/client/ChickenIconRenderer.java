@@ -19,9 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 鸡物品图标 = 实体实时渲染（用户规格）。
- * 每品种缓存一只客户端假实体，用 EntityRenderDispatcher 直接画进物品渲染管线；
- * 无品种组件（原版鸡）渲染原版鸡。实体不会入世界、不会 tick，只用于取模型/纹理。
+ * 鸡物品图标 = 实体实时渲染：每品种缓存一只客户端假实体（不入世界、不 tick，只取模型/纹理），
+ * 用 EntityRenderDispatcher 直接画进物品渲染管线；无品种组件的渲染原版鸡。
  */
 public class ChickenIconRenderer extends BlockEntityWithoutLevelRenderer {
     private static final Map<ResourceLocation, ResourceChicken> DUMMIES = new HashMap<>();
@@ -37,22 +36,21 @@ public class ChickenIconRenderer extends BlockEntityWithoutLevelRenderer {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
         if (level == null) {
-            return; // 主菜单无世界：不渲染（物品在游戏内才显示实体图标）
+            return; // 主菜单无世界：不渲染
         }
         LivingEntity dummy = dummyFor(level, stack);
         if (dummy == null) {
             return;
         }
-        // 幼年/成年状态随物品组件变化（幼年模型自动缩小）
+        // 幼年/成年随物品组件切换（幼年模型自动缩小）
         Boolean mature = stack.get(ModDataComponents.MATURE.get());
         if (dummy instanceof net.minecraft.world.entity.AgeableMob ageable) {
             ageable.setBaby(mature != null && !mature);
         }
         poseStack.pushPose();
         if (context == ItemDisplayContext.GUI) {
-            // 传入姿态已带 ×16（16px = 1 单位）；物品渲染管线已 translate(-0.5,-0.5,-0.5)。
-            // 缩放 0.95 → 鸡约 10px 高（用户调校后的尺寸）。不旋转 = 正面朝向。
-            // 用户调校：先下调 3px、再上调 1px（净 -2px，即 -0.125 单位）
+            // 传入姿态已带 ×16（16px = 1 单位）；管线已 translate(-0.5,-0.5,-0.5)。
+            // 缩放 0.95 → 鸡约 10px 高；不旋转 = 正面朝向；y 为调校后的净偏移
             poseStack.translate(0.5D, 0.15D - 0.1875D + 0.0625D, 0.5D);
             poseStack.scale(0.95F, 0.95F, 0.95F);
         } else {
@@ -69,7 +67,7 @@ public class ChickenIconRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.popPose();
     }
 
-    /** 品种 id → 假实体（原版鸡用 null key 单例）；世界切换时重建缓存。 */
+    /** 品种 id → 假实体（原版鸡用 null key 单例）；世界切换时重建缓存 */
     private static LivingEntity dummyFor(ClientLevel level, ItemStack stack) {
         ResourceLocation breed = stack.get(ModDataComponents.BREED.get());
         if (breed == null) {

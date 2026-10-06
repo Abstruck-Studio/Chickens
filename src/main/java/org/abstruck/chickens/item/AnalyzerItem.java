@@ -10,9 +10,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.abstruck.chickens.entity.chicken.ResourceChicken;
 
-/**
- * 鸡分析器（规格 1.3）：鸡蛋 + 指南针合成；右键鸡显示品种、Tier、三维属性、距下次产出的时间。
- */
+/** 鸡分析器：右键鸡显示品种、三维属性条与距下次产出（幼年则距成年）的时间 */
 public class AnalyzerItem extends Item {
     public AnalyzerItem(Properties properties) {
         super(properties);
@@ -33,7 +31,7 @@ public class AnalyzerItem extends Item {
                 .append("  ").append(bar("tooltip.chickens.gain", chicken.getGain()))
                 .append("  ").append(bar("tooltip.chickens.strength", chicken.getStrength())), false);
         if (chicken.isBaby()) {
-            // 幼年鸡：显示距成年时间（getAge 为负，取绝对值）
+            // getAge 为负，取绝对值得到距成年的剩余时间
             player.displayClientMessage(Component.translatable("message.chickens.analyzer_growth",
                     Math.max(0, -chicken.getAge()) / 20), false);
         } else {

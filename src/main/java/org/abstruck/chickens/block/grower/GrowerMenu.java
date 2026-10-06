@@ -16,9 +16,7 @@ import org.abstruck.chickens.registry.ModDataComponents;
 import org.abstruck.chickens.registry.ModItems;
 import org.abstruck.chickens.registry.ModMenuTypes;
 
-/**
- * 培育箱菜单：幼年鸡输入槽 + 种子槽 + 成年鸡输出槽 + 玩家背包。
- */
+/** 培育箱菜单：幼年鸡输入槽 + 种子槽 + 成年鸡输出槽 + 玩家背包 */
 public class GrowerMenu extends AbstractContainerMenu {
     private final GrowerBlockEntity blockEntity;
     private final ContainerData data;
@@ -63,7 +61,7 @@ public class GrowerMenu extends AbstractContainerMenu {
         }
     }
 
-    /** 进度百分比（0~100），爱心条覆盖宽度由 Screen 换算 */
+    /** 进度百分比（0~100），爱心条宽度由 Screen 换算 */
     public int getScaledProgress() {
         int total = GrowerBlockEntity.maxProgress();
         int progress = this.data.get(0);

@@ -25,27 +25,20 @@ import org.abstruck.chickens.block.nest.NestBlockEntity;
 import org.abstruck.chickens.registry.ModBlockEntities;
 
 /**
- * 三个设施方块的方块内渲染（原版箱子同款架构）：
- * 方块 getRenderShape = ENTITYBLOCK_ANIMATED 跳过默认方块模型渲染，改由本 BER 统一渲染：
- * <ul>
- *   <li>方块模型用 ModelBlockRenderer.renderModel 的统一光照版本——所有面（含内壁）
- *       都用方块自身位置的世界光照。默认方块渲染逐面取【法线方向邻格】的光照，
- *       围栏式模型的内壁面会采样到对侧邻格——贴实体方块（如草方块挡住火把光）时
- *       对侧内壁全黑，不符合直觉</li>
- *   <li>鸡槽物品按品种/幼年组件画实体鸡模型（与背包图标同一渲染管线），
- *       光照同样用世界光照（与大世界里的鸡一致）</li>
- * </ul>
+ * 三个设施方块的方块内渲染（原版箱子同款架构）：方块 getRenderShape = ENTITYBLOCK_ANIMATED
+ * 跳过默认方块渲染，改由本 BER 统一渲染——方块模型所有面（含内壁）都用方块自身位置的世界光照
+ * （默认逐面取法线方向邻格光照，围栏式模型贴实体方块时对侧内壁会全黑）；鸡槽物品画实体鸡模型。
  */
 public final class ChickenBoxRenderer {
-    /** 外层缩放（叠加物品渲染内部 0.9）：0.85 → 整鸡约 0.72 格高 */
+    /** 外层缩放（叠加物品渲染内部的 0.9）：整鸡约 0.72 格高 */
     private static final float SCALE = 0.85F;
-    /** 方块内抬升 = 0.5 × SCALE，脚贴方块底（用户可进游戏微调） */
+    /** 方块内抬升 = 0.5 × SCALE，脚贴方块底 */
     private static final double CHICKEN_Y = 0.5D * SCALE;
 
     private ChickenBoxRenderer() {
     }
 
-    /** 统一光照渲染方块模型（原版箱子同款：所有面用同一个世界光照，无逐面邻格采样） */
+    /** 统一光照渲染方块模型（原版箱子同款：所有面用同一个世界光照） */
     private static void renderBoxModel(BlockState state, PoseStack pose, MultiBufferSource buffer,
                                        int packedLight, int packedOverlay) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -70,7 +63,7 @@ public final class ChickenBoxRenderer {
         pose.popPose();
     }
 
-    /** 繁殖箱：只渲染方块模型（无种子/繁殖中的窗帘变体由 blockstates 模型体现） */
+    /** 繁殖箱：只渲染方块模型（窗帘变体由 blockstates 模型体现） */
     public static class BreedingBoxRenderer implements BlockEntityRenderer<BreedingBoxBlockEntity> {
         public BreedingBoxRenderer(BlockEntityRendererProvider.Context context) {
         }
@@ -82,7 +75,6 @@ public final class ChickenBoxRenderer {
         }
     }
 
-    /** 鸡窝：方块模型 + 鸡槽中的成年鸡物品 */
     public static class NestRenderer implements BlockEntityRenderer<NestBlockEntity> {
         public NestRenderer(BlockEntityRendererProvider.Context context) {
         }
@@ -100,7 +92,6 @@ public final class ChickenBoxRenderer {
         }
     }
 
-    /** 培育箱：方块模型 + 鸡槽中的幼年鸡物品 */
     public static class GrowerRenderer implements BlockEntityRenderer<GrowerBlockEntity> {
         public GrowerRenderer(BlockEntityRendererProvider.Context context) {
         }

@@ -8,15 +8,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 自然生成规则（数据包注册表 {@code chickens:spawn_rule}）：
- * 一条规则 = 维度过滤 + 群系过滤 + 品种加权表 + 生成通过率 chance。
- * 同一生成位置命中多条规则时所有权重合并后抽取（增量友好：加新规则即加新品种，
- * 无需覆盖整条）；chance 取所有命中规则的<b>最小值</b>（瓶颈语义：密度由最严的规则决定，
- * 只加品种的规则不写 chance 不影响密度）。
- * <p>
- * 生成入口（鸡能否进入某群系的生成池）由 {@code #chickens:spawnable_biomes}
- * 标签 + biome modifier 控制；本表决定「是否生成 / 生成哪只鸡」——
- * 未命中任何规则时该次生成被否决（规则表是唯一真相）。
+ * 自然生成规则（数据包注册表 {@code chickens:spawn_rule}）：维度/群系过滤 + 品种加权表 + 通过率 chance。
+ * 多条命中时权重合并抽取，chance 取所有命中规则的最小值（瓶颈语义）。
+ * 未命中任何规则时否决该次生成；能否进入某群系的生成池由 {@code #chickens:spawnable_biomes} 标签 + biome modifier 控制。
  */
 public record SpawnRule(
         Optional<ResourceLocation> dimension,

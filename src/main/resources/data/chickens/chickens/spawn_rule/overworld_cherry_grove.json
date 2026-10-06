@@ -1,0 +1,9 @@
+{
+  "dimension": "minecraft:overworld",
+  "biomes": [
+    "minecraft:cherry_grove"
+  ],
+  "breeds": [
+    { "breed": "chickens:cherry_log", "weight": 3 }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "parents": [
+    "chickens:stone",
+    "chickens:light_gray"
+  ],
+  "results": [
+    {
+      "breed": "chickens:basalt",
+      "weight": 0.4
+    },
+    {
+      "breed": "chickens:andesite",
+      "weight": 0.4
+    },
+    {
+      "breed": "chickens:light_gray",
+      "weight": 0.2
+    }
+  ]
+}

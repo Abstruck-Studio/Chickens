@@ -11,9 +11,7 @@ import org.abstruck.chickens.block.breedingbox.BreedingBoxBlockEntity;
 import org.abstruck.chickens.block.grower.GrowerBlockEntity;
 import org.abstruck.chickens.block.nest.NestBlockEntity;
 
-/**
- * 方块实体注册。物品能力（漏斗/管道）经 RegisterCapabilitiesEvent 暴露。
- */
+/** 方块实体注册 */
 public final class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, Chickens.MODID);
@@ -33,7 +31,7 @@ public final class ModBlockEntities {
     private ModBlockEntities() {
     }
 
-    /** 漏斗/管道兼容（只暴露输出槽可抽取的视图，输入槽的鸡/种子不被抽走） */
+    /** 物品能力（漏斗/管道）：只暴露输出槽视图，输入槽的鸡/种子不会被抽走 */
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, BREEDING_BOX.get(), (be, side) -> be.getExposedItems());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, GROWER.get(), (be, side) -> be.getExposedItems());

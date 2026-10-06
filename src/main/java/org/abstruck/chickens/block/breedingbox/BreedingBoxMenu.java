@@ -16,9 +16,7 @@ import org.abstruck.chickens.registry.ModDataComponents;
 import org.abstruck.chickens.registry.ModItems;
 import org.abstruck.chickens.registry.ModMenuTypes;
 
-/**
- * 繁殖箱菜单：两个成年鸡槽 + 种子槽 + 3×3 输出 + 玩家背包；爱心进度条由 ContainerData 同步。
- */
+/** 繁殖箱菜单：两个成年鸡槽 + 种子槽 + 3×3 输出 + 玩家背包；爱心进度条由 ContainerData 同步 */
 public class BreedingBoxMenu extends AbstractContainerMenu {
     private final BreedingBoxBlockEntity blockEntity;
     private final ContainerData data;
@@ -74,7 +72,7 @@ public class BreedingBoxMenu extends AbstractContainerMenu {
         }
     }
 
-    /** 进度百分比（0~100），爱心条覆盖宽度由 Screen 换算 */
+    /** 进度百分比（0~100），爱心条宽度由 Screen 换算 */
     public int getScaledProgress() {
         int total = BreedingBoxBlockEntity.maxProgress();
         int progress = this.data.get(0);

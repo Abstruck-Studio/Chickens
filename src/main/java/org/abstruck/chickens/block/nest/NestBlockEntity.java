@@ -30,13 +30,17 @@ import org.abstruck.chickens.registry.ModItems;
 
 /**
  * 鸡窝方块实体：成年鸡槽 + 3×3 输出。
- * 每 30 秒（配置）产出一次作物：资源鸡按品种产出（含 Gain/Strength 规则），原版鸡产原版鸡蛋。
+ * 产出节奏：品种 JSON 的 {@code interval} 优先，缺省 600 tick（30 秒），受 Growth 加速。
+ * 资源鸡按品种产出，原版鸡产原版鸡蛋。
  */
 public class NestBlockEntity extends net.minecraft.world.level.block.entity.BlockEntity {
     public static final int CHICKEN_IN = 0;
     public static final int OUTPUT_START = 1;
     public static final int OUTPUT_COUNT = 9;
     public static final int PROGRESS_STEP = 100;
+
+    /** 品种 JSON 未写 interval 时的默认产出间隔（tick，600 = 30 秒） */
+    public static final int DEFAULT_PRODUCTION_INTERVAL = 600;
 
     private final ItemStackHandler items = new ItemStackHandler(1 + OUTPUT_COUNT) {
         @Override
@@ -83,8 +87,28 @@ public class NestBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         super(ModBlockEntities.NEST.get(), pos, state);
     }
 
-    public static int maxProgress() {
-        return ChickenConfig.NEST_PRODUCTION_TIME.get() * PROGRESS_STEP;
+    /** 产出一次所需总进度（= 产出间隔 × PROGRESS_STEP）。按品种实时解析；
+     *  菜单经 ContainerData 同步给客户端，客户端读同步值而非本地重算（见 NestMenu#getScaledProgress） */
+    public int maxProgress() {
+        return this.productionInterval() * PROGRESS_STEP;
+    }
+
+    /** 产出间隔（tick）：品种 JSON 的 interval 优先；缺省（原版鸡/未写/解析失败）600；下限 20 tick（1 秒） */
+    private int productionInterval() {
+        int fallback = DEFAULT_PRODUCTION_INTERVAL;
+        ItemStack chickenStack = this.items.getStackInSlot(CHICKEN_IN);
+        if (chickenStack.isEmpty() || this.level == null) {
+            return fallback;
+        }
+        ResourceLocation breedId = chickenStack.get(ModDataComponents.BREED.get());
+        if (breedId == null) {
+            return fallback; // 原版鸡
+        }
+        ChickenBreed breed = BreedLookups.breedRegistry(this.level.registryAccess()).get(breedId);
+        if (breed == null || breed.interval().isEmpty()) {
+            return fallback;
+        }
+        return Math.max(20, breed.interval().get());
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, NestBlockEntity be) {
@@ -92,21 +116,21 @@ public class NestBlockEntity extends net.minecraft.world.level.block.entity.Bloc
             return;
         }
         if (be.items.getStackInSlot(CHICKEN_IN).isEmpty() || !be.hasAnyOutputSpace()) {
-            be.progress = 0; // 无鸡或输出满：停产（进度停摆，等玩家取走产物）
+            be.progress = 0; // 无鸡或输出满：停产（等玩家取走产物）
             return;
         }
-        // 生长属性加速：进度 × (1 + growth × 系数)，与实体鸡同公式
+        // Growth 加速：进度 × (1 + growth × 系数)，与实体鸡同公式
         ChickenStats stats = be.items.getStackInSlot(CHICKEN_IN).get(ModDataComponents.STATS.get());
         int growth = stats != null ? stats.growth() : 1;
         be.progress += (int) Math.round(PROGRESS_STEP
                 * (1.0 + growth * ChickenConfig.GROWTH_INTERVAL_FACTOR.get()));
-        if (be.progress >= maxProgress()) {
+        if (be.progress >= be.maxProgress()) {
             be.progress = 0;
             be.produce(level);
         }
     }
 
-    /** 输出是否还有空间（任一空槽，或任一未满堆叠的槽——同物品可合并） */
+    /** 输出是否有空间：任一空槽，或任一未满堆叠的槽（同物品可合并） */
     private boolean hasAnyOutputSpace() {
         for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT; i++) {
             ItemStack s = this.items.getStackInSlot(i);
@@ -117,11 +141,9 @@ public class NestBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         return false;
     }
 
-    /** 产出：槽里 N 只鸡 → 至多 N 份产物。每只鸡独立随机（主/副产物、数量），
-     *  同物品合并堆叠；抽到槽里没有且无空位的物品时跳过该份（其余份照常产出，不掉落）。
-     *  输出完全放不下（无空槽且无可合并空间）时由 tick 停产。 */
+    /** 产出：槽里 N 只鸡 → 至多 N 份产物，每只鸡独立随机（主/副产物、数量）；
+     *  同物品合并堆叠，放不下的份跳过（输出满由 tick 停产保障） */
     private void produce(Level level) {
-        // 下蛋音效（原版鸡下蛋同款）
         level.playSound(null, this.worldPosition, net.minecraft.sounds.SoundEvents.CHICKEN_EGG,
                 net.minecraft.sounds.SoundSource.BLOCKS, 1.0F,
                 0.9F + level.random.nextFloat() * 0.2F);
@@ -132,7 +154,7 @@ public class NestBlockEntity extends net.minecraft.world.level.block.entity.Bloc
             if (output.isEmpty()) {
                 continue;
             }
-            insertOutput(output); // 放不下（无同物品堆叠且无空槽）→ 跳过该份
+            insertOutput(output);
         }
         this.setChanged();
     }
@@ -160,7 +182,7 @@ public class NestBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         return false;
     }
 
-    /** 按品种规则计算产出（与实体产出同规则：count 随机 + gain 加成 + strength 替代产出） */
+    /** 按品种规则计算产物（同实体鸡：count 随机 + gain 加成 + strength 权重） */
     private static ItemStack produceStack(Level level, ItemStack chickenStack) {
         var access = level.registryAccess();
         ResourceLocation breedId = chickenStack.get(ModDataComponents.BREED.get());
@@ -174,7 +196,7 @@ public class NestBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         ChickenStats stats = chickenStack.get(ModDataComponents.STATS.get());
         int strength = stats != null ? stats.strength() : 1;
         ChickenBreed.Product product = BreedLookups.pickOutputItem(breed, strength, level.random);
-        Item item = BreedLookups.resolveItem(access, product.item());
+        Item item = BreedLookups.resolveItem(access, product.item(), level.random);
         if (item == null) {
             return ItemStack.EMPTY;
         }
@@ -182,8 +204,9 @@ public class NestBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         int gain = stats != null ? stats.gain() : 1;
         int bonus = (int) Math.round(base * gain * breed.gainMultiplier());
         ItemStack stack = new ItemStack(item, Math.max(1, base + bonus));
-        product.fluid().ifPresent(fluidId -> {
-            net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluid = BreedLookups.fluidHolderOf(access, fluidId);
+        product.fluid().ifPresent(fluidRef -> {
+            net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluid =
+                    BreedLookups.fluidHolderOf(access, fluidRef, level.random);
             if (fluid != null) {
                 stack.set(ModDataComponents.FLUID.get(), fluid);
             }
@@ -220,7 +243,7 @@ public class NestBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         this.progress = tag.getInt("Progress");
     }
 
-    /** 服务端数据变化后把完整数据同步给客户端（BER 渲染鸡依赖客户端槽位数据） */
+    /** 数据变化后同步完整数据给客户端（BER 渲染鸡依赖客户端槽位数据） */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);

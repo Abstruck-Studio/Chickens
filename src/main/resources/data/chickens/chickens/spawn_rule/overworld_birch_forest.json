@@ -1,0 +1,10 @@
+{
+  "dimension": "minecraft:overworld",
+  "biomes": [
+    "minecraft:birch_forest",
+    "minecraft:old_growth_birch_forest"
+  ],
+  "breeds": [
+    { "breed": "chickens:birch_log", "weight": 3 }
+  ]
+}

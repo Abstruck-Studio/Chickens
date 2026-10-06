@@ -6,10 +6,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
-/**
- * 鸡的三维属性（growth/gain/strength，各 1~10）。
- * 实体上存 SynchedEntityData；物品（鸡物品/受精蛋）上存 {@code chickens:stats} 组件的不可变快照。
- */
+/** 鸡的三维属性（各 1~10）：实体上走 SynchedEntityData，鸡物品上走 {@code chickens:stats} 组件 */
 public record ChickenStats(byte growth, byte gain, byte strength) {
     public static final ChickenStats DEFAULT = new ChickenStats((byte) 1, (byte) 1, (byte) 1);
 

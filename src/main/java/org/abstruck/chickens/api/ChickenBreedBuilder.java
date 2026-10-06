@@ -1,39 +1,47 @@
 package org.abstruck.chickens.api;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.material.Fluid;
 import org.abstruck.chickens.breed.ChickenBreed;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * 给其他模组用的程序化品种构建器。
- * <p>
- * 注意：品种注册表是数据包注册表，没有"运行时注册"入口——
- * 构建出的 {@link ChickenBreed} 交给 {@link ChickenBreedProvider}（datagen）
- * 写成 {@code data/<你的模组id>/chickens/breed/<品种id>.json} 随你的 jar 发布，
- * 或者干脆手写 JSON（零代码，和 tags 一个套路）。
+ * 给其他模组用的程序化品种构建器：构建出的 ChickenBreed 交给 ChickenBreedProvider（datagen）
+ * 写成 data/&lt;模组id&gt;/chickens/breed/&lt;品种id&gt;.json 随 jar 发布
+ * （品种注册表是数据包注册表，没有运行时注册入口；也可以直接手写 JSON）。
  */
 public final class ChickenBreedBuilder {
-    private final ResourceLocation item;
+    private final ChickenBreed.ItemRef item;
     private int itemWeight = 10;
     private Optional<ResourceLocation> texture = Optional.empty();
     private ChickenBreed.Count count = new ChickenBreed.Count(1, 1);
     private double gainMultiplier = 0.2;
     private final List<ChickenBreed.Product> byproducts = new java.util.ArrayList<>();
     private Optional<ResourceLocation> loot = Optional.empty();
-    private Optional<ResourceLocation> mainFluid = Optional.empty();
+    private Optional<ChickenBreed.FluidRef> mainFluid = Optional.empty();
+    private Optional<ChickenBreed.ParticleConfig> particles = Optional.empty();
+    private Optional<Integer> interval = Optional.empty();
     private int tier = 0;
+    private final List<TagKey<ChickenBreed>> tags = new java.util.ArrayList<>();
 
-    private ChickenBreedBuilder(ResourceLocation item) {
+    private ChickenBreedBuilder(ChickenBreed.ItemRef item) {
         this.item = item;
     }
 
     public static ChickenBreedBuilder of(ResourceLocation item) {
-        return new ChickenBreedBuilder(item);
+        return new ChickenBreedBuilder(ChickenBreed.ItemRef.of(item));
     }
 
-    /** 主产物权重（缺省 10）。抽取时有效权重 = 权重 × 力量。 */
+    /** 主产物为物品标签（矿词）：产出时从标签内已注册物品随机抽一个 */
+    public static ChickenBreedBuilder of(TagKey<Item> item) {
+        return new ChickenBreedBuilder(ChickenBreed.ItemRef.of(item));
+    }
+
+    /** 主产物权重（缺省 10）；抽取时有效权重 = 权重 × 力量 */
     public ChickenBreedBuilder itemWeight(int weight) {
         this.itemWeight = weight;
         return this;
@@ -57,25 +65,45 @@ public final class ChickenBreedBuilder {
 
     /** 副产物（力量权重制，见 ChickenBreed.Product） */
     public ChickenBreedBuilder byproduct(ResourceLocation item, int weight) {
-        this.byproducts.add(new ChickenBreed.Product(item, weight, Optional.empty()));
+        this.byproducts.add(new ChickenBreed.Product(ChickenBreed.ItemRef.of(item), weight, Optional.empty()));
+        return this;
+    }
+
+    /** 副产物为物品标签（矿词）：产出时从标签内已注册物品随机抽一个 */
+    public ChickenBreedBuilder byproduct(TagKey<Item> item, int weight) {
+        this.byproducts.add(new ChickenBreed.Product(ChickenBreed.ItemRef.of(item), weight, Optional.empty()));
         return this;
     }
 
     /** 副产物为流体蛋时携带的流体（写入 chickens:fluid 组件） */
     public ChickenBreedBuilder byproduct(ResourceLocation item, int weight, ResourceLocation fluid) {
-        this.byproducts.add(new ChickenBreed.Product(item, weight, Optional.of(fluid)));
+        this.byproducts.add(new ChickenBreed.Product(ChickenBreed.ItemRef.of(item), weight,
+                Optional.of(ChickenBreed.FluidRef.of(fluid))));
         return this;
     }
 
     /** 主产物为流体蛋时携带的流体 */
     public ChickenBreedBuilder fluid(ResourceLocation fluid) {
-        this.mainFluid = Optional.of(fluid);
+        this.mainFluid = Optional.of(ChickenBreed.FluidRef.of(fluid));
         return this;
     }
 
-    /** 等级标记（仅创造 Tab 分类排序，缺省 0） */
+    /** 主产物为流体蛋且流体写标签（矿词）：产出时从标签内已注册流体随机抽一个 */
+    public ChickenBreedBuilder fluid(TagKey<Fluid> fluid) {
+        this.mainFluid = Optional.of(ChickenBreed.FluidRef.of(fluid));
+        return this;
+    }
+
+    /** 等级标记（Tier）：杂交无配方时优先产出 tier 较低者，也用于创造 Tab 排序；缺省 0 */
     public ChickenBreedBuilder tier(int tier) {
         this.tier = tier;
+        return this;
+    }
+
+    /** 品种所属标签（供杂交规则分组引用）：父母写 {@code "#chickens:xxx"} 命中全部成员，
+     *  结果写 {@code "$parent:xxx"} 返还实际参与的那只成员；可多次调用加多个 */
+    public ChickenBreedBuilder tag(TagKey<ChickenBreed> tag) {
+        this.tags.add(tag);
         return this;
     }
 
@@ -84,8 +112,29 @@ public final class ChickenBreedBuilder {
         return this;
     }
 
+    /** 环境粒子特效（缺省无粒子）：粒子注册表 id（如 minecraft:portal），默认每 tick 2 颗 */
+    public ChickenBreedBuilder particles(ResourceLocation particleId) {
+        this.particles = Optional.of(new ChickenBreed.ParticleConfig(particleId,
+                ChickenBreed.ParticleConfig.DEFAULT_CHANCE, ChickenBreed.ParticleConfig.DEFAULT_COUNT,
+                ChickenBreed.ParticleConfig.DEFAULT_SPREAD));
+        return this;
+    }
+
+    /** 环境粒子特效（完整参数）：chance = 每 tick 触发概率，count = 每次触发颗数，
+     *  spread = 水平散布半径（体宽 × spread，末影人 = 0.5） */
+    public ChickenBreedBuilder particles(ResourceLocation particleId, float chance, int count, float spread) {
+        this.particles = Optional.of(new ChickenBreed.ParticleConfig(particleId, chance, count, spread));
+        return this;
+    }
+
+    /** 鸡窝产出间隔（tick，600 = 30 秒）；缺省用内置默认 600；只影响鸡窝，实体鸡节奏保持原版 */
+    public ChickenBreedBuilder interval(int ticks) {
+        this.interval = Optional.of(ticks);
+        return this;
+    }
+
     public ChickenBreed build() {
         return new ChickenBreed(new ChickenBreed.Product(item, itemWeight, mainFluid), texture, count,
-                gainMultiplier, List.copyOf(byproducts), loot, tier);
+                gainMultiplier, List.copyOf(byproducts), loot, tier, List.copyOf(tags), particles, interval);
     }
 }

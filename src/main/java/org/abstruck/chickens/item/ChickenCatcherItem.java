@@ -14,8 +14,8 @@ import org.abstruck.chickens.registry.ModDataComponents;
 import org.abstruck.chickens.registry.ModItems;
 
 /**
- * 鸡捕手：右键任意鸡（含原版鸡）→ 变成鸡物品，品种/三维属性/自定义名完整保存。
- * 原版鸡捕获的物品**不带**品种与属性组件，放出时保持原版鸡。捕手消耗 1 个（创造模式不消耗）。
+ * 鸡捕手：右键任意鸡（含原版鸡）→ 捕获为鸡物品，品种/三维属性/自定义名/幼年状态完整保存；
+ * 原版鸡捕获物不带 breed/stats 组件，放出后仍是原版鸡。捕手消耗 1 个（创造模式不消耗）。
  */
 public class ChickenCatcherItem extends Item {
     public ChickenCatcherItem(Properties properties) {
@@ -31,7 +31,6 @@ public class ChickenCatcherItem extends Item {
             return InteractionResult.PASS;
         }
         ItemStack chickenItem = new ItemStack(ModItems.CHICKEN.get());
-        // 成熟度标记：幼年鸡保持幼年（原版鸡也可为幼年）
         chickenItem.set(ModDataComponents.MATURE.get(), !chicken.isBaby());
         if (chicken instanceof ResourceChicken resource) {
             ResourceLocation breed = resource.getBreedId();
@@ -39,7 +38,6 @@ public class ChickenCatcherItem extends Item {
             chickenItem.set(ModDataComponents.BREED.get(), breed);
             chickenItem.set(ModDataComponents.STATS.get(), stats);
         }
-        // 原版鸡：不加 breed/stats 组件，放出时仍是原版鸡
         if (chicken.hasCustomName()) {
             chickenItem.set(DataComponents.CUSTOM_NAME, chicken.getCustomName());
         }

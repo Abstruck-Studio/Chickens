@@ -1,0 +1,9 @@
+{
+  "dimension": "minecraft:the_nether",
+  "biomes": [
+    "minecraft:warped_forest"
+  ],
+  "breeds": [
+    { "breed": "chickens:warped_stem", "weight": 1 }
+  ]
+}

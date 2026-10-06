@@ -13,10 +13,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import java.util.List;
 
-/**
- * 鸡物品的 BakedModel 包装：只把 isCustomRenderer 置为 true，
- * 让 ItemRenderer 走 IClientItemExtensions 的定制渲染（实体实时渲染），其余全部委托原模型。
- */
+/** 鸡物品的 BakedModel 包装：isCustomRenderer 置 true 走定制渲染（实体实时图标），其余委托原模型 */
 public final class ChickenIconBakedModel implements BakedModel {
     private final BakedModel delegate;
 

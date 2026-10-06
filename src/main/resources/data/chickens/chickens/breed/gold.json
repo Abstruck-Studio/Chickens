@@ -1,6 +1,6 @@
 {
   "item": {
-    "item": "minecraft:gold_ingot",
+    "item": "minecraft:raw_gold",
     "weight": 10
   },
   "count": [
@@ -8,5 +8,5 @@
     1
   ],
   "gain_multiplier": 0.2,
-  "tier": 4
+  "tier": 5
 }

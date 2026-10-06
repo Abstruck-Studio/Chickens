@@ -23,15 +23,15 @@ import org.abstruck.chickens.entity.ThrownDyeEgg;
 import java.util.List;
 
 /**
- * 染料蛋（1.12「更多鸡」的 colored_egg）：鸡蛋 + 染料合成，颜色存 {@code minecraft:dyed_color} 组件。
- * 扔出砸中后按原版鸡蛋概率（1/8，其中 1/32 出 4 只）孵出对应颜色的幼年染料鸡（规格 1.1）。
+ * 染料蛋：颜色存 minecraft:dyed_color 组件；扔出砸中后按原版鸡蛋概率
+ * （1/8 出鸡，其中 1/32 出 4 只）孵出对应颜色的幼年染料鸡。
  */
 public class DyeEggItem extends Item implements ProjectileItem {
     public DyeEggItem(Item.Properties properties) {
         super(properties);
     }
 
-    /** 按 rgb 找对应 DyeColor（找不到返回 null）。两边都截断低 24 位再比较。 */
+    /** 按 rgb 找对应 DyeColor（找不到返回 null）；两边都截断到低 24 位再比较 */
     public static DyeColor dyeColorOf(int rgb) {
         int plain = rgb & 0xFFFFFF;
         for (DyeColor dye : DyeColor.values()) {
@@ -50,7 +50,6 @@ public class DyeEggItem extends Item implements ProjectileItem {
         }
         DyeColor dye = dyeColorOf(color.rgb());
         if (dye != null) {
-            // 直接显示颜色名（如「红」），文字渲染成该颜色
             tooltip.add(Component.translatable("color.minecraft." + dye.getName())
                     .withStyle(Style.EMPTY.withColor(0xFF000000 | (color.rgb() & 0xFFFFFF))));
         }

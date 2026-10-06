@@ -1,0 +1,23 @@
+{
+  "item": {
+    "item": "minecraft:crimson_stem",
+    "weight": 10
+  },
+  "count": [
+    1,
+    1
+  ],
+  "gain_multiplier": 0.2,
+  "byproducts": [
+    {
+      "item": "minecraft:crimson_fungus",
+      "weight": 30
+    },
+    {
+      "item": "minecraft:nether_wart_block",
+      "weight": 10
+    }
+  ],
+  "tier": 2,
+  "tags": "#chickens:log_chicken"
+}

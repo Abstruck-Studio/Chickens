@@ -1,0 +1,9 @@
+{
+  "dimension": "minecraft:overworld",
+  "biomes": [
+    "minecraft:dark_forest"
+  ],
+  "breeds": [
+    { "breed": "chickens:dark_oak_log", "weight": 3 }
+  ]
+}

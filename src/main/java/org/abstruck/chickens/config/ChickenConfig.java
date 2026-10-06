@@ -3,21 +3,13 @@ package org.abstruck.chickens.config;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * 模组配置：繁殖改造开关、产出乘数、设施节奏与幼年成长时间。
+ * 模组配置：产出乘数、设施节奏与幼年成长时间。
  */
 public final class ChickenConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.BooleanValue MUTATION_ENABLED = BUILDER
-            .comment("是否允许异品种杂交产生新品种")
-            .define("mutationEnabled", true);
-
-    public static final ModConfigSpec.BooleanValue VANILLA_BREEDING_REWORK = BUILDER
-            .comment("鸡交配时不再直接生成幼体，改为掉落受精蛋")
-            .define("vanillaBreedingRework", false);
-
     public static final ModConfigSpec.DoubleValue PRODUCTION_INTERVAL_MULTIPLIER = BUILDER
-            .comment("全局产出间隔乘数（品种 JSON 里的 interval 为基础值）")
+            .comment("实体鸡产出间隔全局乘数（基础值为原版随机 5~10 分钟；鸡窝间隔不受此值影响）")
             .defineInRange("productionIntervalMultiplier", 1.0, 0.01, 100.0);
 
     public static final ModConfigSpec.DoubleValue GROWTH_INTERVAL_FACTOR = BUILDER
@@ -31,10 +23,6 @@ public final class ChickenConfig {
     public static final ModConfigSpec.IntValue GROWER_TIME = BUILDER
             .comment("培育箱幼年鸡成长时间（tick，600 = 30 秒）；需要小麦种子")
             .defineInRange("growerTime", 600, 20, 120000);
-
-    public static final ModConfigSpec.IntValue NEST_PRODUCTION_TIME = BUILDER
-            .comment("鸡窝产出间隔（tick，600 = 30 秒）")
-            .defineInRange("nestProductionTime", 600, 20, 120000);
 
     public static final ModConfigSpec.IntValue BABY_GROWTH_TIME = BUILDER
             .comment("幼年鸡成长到成年所需时间（tick，6000 = 5 分钟；原版硬编码是 24000 = 20 分钟）")

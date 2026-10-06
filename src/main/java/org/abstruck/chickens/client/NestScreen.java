@@ -8,20 +8,16 @@ import net.minecraft.world.entity.player.Inventory;
 import org.abstruck.chickens.Chickens;
 import org.abstruck.chickens.block.nest.NestMenu;
 
-/**
- * 鸡窝界面（用户绘制 UI，贴图已裁剪为 175×168）。
- * 进度：GUI 内的灰色进度条 (62,41)-(87,51) 为槽位背景，
- * 进度推进时把爱心素材从左往右覆盖上去。
- */
+/** 鸡窝界面（贴图 175×168）；进度用爱心素材从左往右覆盖灰色进度条 */
 public class NestScreen extends AbstractContainerScreen<NestMenu> {
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "textures/gui/nest.png");
-    /** 爱心覆盖素材（26×12，裁自用户原图 (176,0)-(201,11)） */
+    /** 爱心覆盖素材（26×12） */
     private static final ResourceLocation HEART_BAR =
             ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "textures/gui/heart_bar.png");
     private static final int HEART_BAR_W = 26;
     private static final int HEART_BAR_H = 12;
-    /** 灰色进度条在 GUI 内的位置（标记.md：62,41 ~ 87,51；用户微调上移 1px） */
+    /** 灰色进度条位置；BAR_W 必须 = HEART_BAR_W 保持 1:1 覆盖 */
     private static final int BAR_X = 62;
     private static final int BAR_Y = 40;
     private static final int BAR_W = 26;

@@ -8,23 +8,19 @@ import net.minecraft.world.entity.player.Inventory;
 import org.abstruck.chickens.Chickens;
 import org.abstruck.chickens.block.breedingbox.BreedingBoxMenu;
 
-/**
- * 繁殖箱界面（用户绘制 UI，贴图已裁剪为 175×165）。
- * 进度：GUI 内的灰色进度条 (80,40)-(109,51) 为槽位背景，
- * 进度推进时把爱心素材（heart_bar.png，自用户图右上角裁出）从左往右覆盖上去。
- */
+/** 繁殖箱界面（贴图 175×165）；进度用爱心素材从左往右覆盖灰色进度条 */
 public class BreedingBoxScreen extends AbstractContainerScreen<BreedingBoxMenu> {
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "textures/gui/breeding_box.png");
-    /** 爱心覆盖素材（26×12，裁自用户原图 (176,0)-(201,11)） */
+    /** 爱心覆盖素材（26×12） */
     private static final ResourceLocation HEART_BAR =
             ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "textures/gui/heart_bar.png");
     private static final int HEART_BAR_W = 26;
     private static final int HEART_BAR_H = 12;
-    /** 灰色进度条在 GUI 内的位置（标记.md：80,40 ~ 109,51；用户微调右移 4px） */
+    /** 灰色进度条位置；BAR_W 必须 = HEART_BAR_W 保持 1:1 覆盖（写大会拉伸素材） */
     private static final int BAR_X = 84;
     private static final int BAR_Y = 40;
-    private static final int BAR_W = 30;
+    private static final int BAR_W = HEART_BAR_W;
     private static final int BAR_H = 12;
 
     public BreedingBoxScreen(BreedingBoxMenu menu, Inventory inventory, Component title) {
@@ -42,7 +38,6 @@ public class BreedingBoxScreen extends AbstractContainerScreen<BreedingBoxMenu> 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
-        // 爱心覆盖灰色进度条：scissor 从左往右，区域内贴爱心素材（拉伸到条宽）
         int fill = this.menu.getScaledProgress() * BAR_W / 100;
         if (fill > 0) {
             int barX = this.leftPos + BAR_X;

@@ -10,28 +10,20 @@ import org.abstruck.chickens.item.AnalyzerItem;
 import org.abstruck.chickens.item.ChickenCatcherItem;
 import org.abstruck.chickens.item.ChickenItem;
 import org.abstruck.chickens.item.DyeEggItem;
-import org.abstruck.chickens.item.FertileEggItem;
 import org.abstruck.chickens.item.FluidEggFluidHandler;
 import org.abstruck.chickens.item.FluidEggItem;
 
-/**
- * 物品注册。按用户规格不需要刷怪蛋（已移除）。
- * 本类持有 DeferredRegister 条目，主类构造时必须调用 {@link #init()} 触发类初始化。
- */
+/** 物品注册。主类构造时必须调用 {@link #init()} 触发类初始化 */
 public final class ModItems {
-    /** 鸡物品：品种由 {@code chickens:breed} 组件区分，右键放置生成对应资源鸡；堆叠上限 16 */
+    /** 鸡物品：品种存 {@code chickens:breed} 组件，右键放置生成对应资源鸡 */
     public static final DeferredItem<Item> CHICKEN =
             Chickens.ITEMS.register("chicken", () -> new ChickenItem(new Item.Properties().stacksTo(16)));
 
-    /** 鸡捕手：右键鸡把它变成鸡物品（原版鸡也可，按默认品种捕获） */
+    /** 鸡捕手：右键把鸡变成鸡物品（原版鸡按默认品种捕获） */
     public static final DeferredItem<Item> CATCHER =
             Chickens.ITEMS.register("catcher", () -> new ChickenCatcherItem(new Item.Properties()));
 
-    /** 受精鸡蛋：繁殖改造开启时鸡交配掉落；阶段 5 蛋巢孵化 */
-    public static final DeferredItem<Item> FERTILE_EGG =
-            Chickens.ITEMS.register("fertile_egg", () -> new FertileEggItem(new Item.Properties()));
-
-    /** 方块物品（21.1.252 的 DeferredRegister.Blocks 不会自动注册，必须显式注册） */
+    /** 方块物品（DeferredRegister.Blocks 不会自动注册，必须显式注册） */
     public static final DeferredItem<Item> BREEDING_BOX =
             Chickens.ITEMS.register("breeding_box", () -> new BlockItem(ModBlocks.BREEDING_BOX.get(), new Item.Properties()));
 
@@ -41,16 +33,15 @@ public final class ModItems {
     public static final DeferredItem<Item> NEST =
             Chickens.ITEMS.register("nest", () -> new BlockItem(ModBlocks.NEST.get(), new Item.Properties()));
 
-    /** 鸡分析器（阶段 6 保留）：右键鸡显示品种/属性/下次产出时间 */
+    /** 鸡分析器：右键鸡显示品种/属性/下次产出时间 */
     public static final DeferredItem<Item> CHICKEN_ANALYZER =
             Chickens.ITEMS.register("chicken_analyzer", () -> new AnalyzerItem(new Item.Properties()));
 
-    /** 流体蛋：统一的水蛋/岩浆蛋/自定义流体蛋，流体类型存 {@code chickens:fluid} 组件；
-     *  右键方块倒出流体源（不能装）。颜色由数据包注册表 {@code chickens:fluid_egg} 定义 */
+    /** 流体蛋：流体存 {@code chickens:fluid} 组件，右键倒出；颜色由 {@code chickens:fluid_egg} 注册表定义 */
     public static final DeferredItem<Item> FLUID_EGG =
             Chickens.ITEMS.register("fluid_egg", () -> new FluidEggItem(new Item.Properties().stacksTo(64)));
 
-    /** 染料蛋：鸡蛋+染料合成，颜色存 dyed_color 组件，扔出孵对应染料鸡 */
+    /** 染料蛋：投掷命中孵出对应染料鸡 */
     public static final DeferredItem<Item> DYE_EGG =
             Chickens.ITEMS.register("dye_egg", () -> new DyeEggItem(new Item.Properties().stacksTo(16)));
 
@@ -58,8 +49,7 @@ public final class ModItems {
     public static void init() {
     }
 
-    /** 物品能力注册：流体蛋暴露物品流体能力（IFluidHandlerItem），
-     *  储罐类方块（Create 分液池、各类流体储罐）经 FluidUtil 读取即可倒入 */
+    /** 流体蛋暴露物品流体能力（IFluidHandlerItem），储罐类方块经 FluidUtil 读取即可倒入 */
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerItem(Capabilities.FluidHandler.ITEM,
                 (stack, ctx) -> new FluidEggFluidHandler(stack), FLUID_EGG.get());

@@ -16,9 +16,7 @@ import org.abstruck.chickens.registry.ModDataComponents;
 import org.abstruck.chickens.registry.ModItems;
 import org.abstruck.chickens.registry.ModMenuTypes;
 
-/**
- * 鸡窝菜单：成年鸡槽 + 3×3 输出 + 玩家背包；爱心产出进度条由 ContainerData 同步。
- */
+/** 鸡窝菜单：成年鸡槽 + 3×3 输出 + 玩家背包；产出进度条由 ContainerData 同步 */
 public class NestMenu extends AbstractContainerMenu {
     private final NestBlockEntity blockEntity;
     private final ContainerData data;
@@ -61,9 +59,10 @@ public class NestMenu extends AbstractContainerMenu {
         }
     }
 
-    /** 进度百分比（0~100），爱心条覆盖宽度由 Screen 换算 */
+    /** 进度百分比（0~100）。total 取 ContainerData 索引 1（按品种实时计算）——
+     *  客户端本地没有鸡槽数据，必须读同步值，不能像其他两个方块那样重算 */
     public int getScaledProgress() {
-        int total = NestBlockEntity.maxProgress();
+        int total = this.data.get(1);
         int progress = this.data.get(0);
         return total == 0 ? 0 : progress * 100 / total;
     }

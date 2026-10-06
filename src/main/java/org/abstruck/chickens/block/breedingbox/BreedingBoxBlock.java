@@ -23,9 +23,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * 繁殖箱：UI 里放两只鸡 → 爱心进度 → 输出受精蛋。
- * 漏斗/管道经能力系统存取。放置时正面朝向玩家（FACING）；
- * HAS_SEEDS / IS_BREEDING 驱动外观变体（无种子空窗帘 / 繁殖中拉窗帘，1.12 roost 同款）。
+ * 繁殖箱：UI 里放两只鸡 → 爱心进度 → 输出幼年物品鸡。
+ * 放置时正面朝向玩家（FACING）；HAS_SEEDS / IS_BREEDING 驱动外观变体。
  */
 public class BreedingBoxBlock extends HorizontalDirectionalBlock implements EntityBlock {
     public static final BooleanProperty HAS_SEEDS = BooleanProperty.create("has_seeds");
@@ -50,15 +49,13 @@ public class BreedingBoxBlock extends HorizontalDirectionalBlock implements Enti
         return simpleCodec(BreedingBoxBlock::new);
     }
 
-    /** 模型渲染交给 BER 统一光照（原版箱子同款 RenderShape）：围栏式模型的内壁
-     *  不再逐面取邻格光照（贴实体方块时对侧内壁会全黑） */
+    /** 渲染交给 BER 统一光照：围栏式模型的内壁不逐面取邻格光照（否则贴实体方块时对侧内壁全黑） */
     @Override
     public net.minecraft.world.level.block.RenderShape getRenderShape(BlockState state) {
         return net.minecraft.world.level.block.RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
-    /** 21.1.252 的 HorizontalDirectionalBlock 没有放置逻辑（FACING 恒为默认 NORTH），
-     *  这里按原版熔炉的写法：放置时正面朝向玩家 */
+    /** 原版熔炉同款：放置时正面朝向玩家（HorizontalDirectionalBlock 本身无放置逻辑，FACING 恒为 NORTH） */
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());

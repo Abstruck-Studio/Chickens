@@ -6,7 +6,11 @@
   "results": [
     {
       "breed": "chickens:gunpowder",
-      "weight": 0.9
+      "weight": 0.8
+    },
+    {
+      "breed": "chickens:sand",
+      "weight": 0.1
     },
     {
       "breed": "chickens:flint",

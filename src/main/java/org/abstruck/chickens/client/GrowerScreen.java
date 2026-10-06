@@ -8,20 +8,16 @@ import net.minecraft.world.entity.player.Inventory;
 import org.abstruck.chickens.Chickens;
 import org.abstruck.chickens.block.grower.GrowerMenu;
 
-/**
- * 培育箱界面（用户绘制 UI，贴图已裁剪为 175×132）。
- * 进度：GUI 内的灰色进度条 (94,23)-(119,33) 为槽位背景，
- * 进度推进时把爱心素材从左往右覆盖上去。
- */
+/** 培育箱界面（贴图 175×132）；进度用爱心素材从左往右覆盖灰色进度条 */
 public class GrowerScreen extends AbstractContainerScreen<GrowerMenu> {
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "textures/gui/grower.png");
-    /** 爱心覆盖素材（26×12，裁自用户原图 (176,0)-(201,11)） */
+    /** 爱心覆盖素材（26×12） */
     private static final ResourceLocation HEART_BAR =
             ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "textures/gui/heart_bar.png");
     private static final int HEART_BAR_W = 26;
     private static final int HEART_BAR_H = 12;
-    /** 灰色进度条在 GUI 内的位置（标记.md：94,23 ~ 119,33；用户微调上移 1px） */
+    /** 灰色进度条位置；BAR_W 必须 = HEART_BAR_W 保持 1:1 覆盖 */
     private static final int BAR_X = 94;
     private static final int BAR_Y = 22;
     private static final int BAR_W = 26;

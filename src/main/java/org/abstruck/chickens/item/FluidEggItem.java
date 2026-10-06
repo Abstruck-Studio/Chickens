@@ -5,6 +5,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -31,23 +34,18 @@ import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.common.SoundActions;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.FluidType;
+import org.abstruck.chickens.breed.BreedLookups;
 import org.abstruck.chickens.registry.ModDataComponents;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.OptionalInt;
 
 /**
- * 流体蛋：一个物品承载所有流体，流体类型存在 {@code chickens:fluid} 组件。
- * 放置流体的实现与原版 {@link net.minecraft.world.item.BucketItem} 完全一致
- * （同样只重写 {@link #use}：右键方块的 useOn 链路返回 PASS 后客户端会自动
- * fallback 到 useItem → 本方法）：
- * <ul>
- *   <li>目标格选择：点击的方块能装流体（{@link LiquidBlockContainer}）就用点击格，否则用点击面相邻格</li>
- *   <li>放置顺序：{@code LiquidBlockContainer.placeLiquid}（其他模组储罐的兼容入口）→
- *       流体汽化钩子 → 下界水蒸发 → 直接放置流体方块</li>
- *   <li>音效走 {@code FluidType.getSound} 钩子并发送 {@code FLUID_PLACE} 游戏事件</li>
- * </ul>
- * 与桶的不同：只能**倒出**流体源（不能装）；消耗 1 个蛋（创造不消耗）；可堆叠。
+ * 流体蛋：一个物品承载所有流体，流体类型存在 chickens:fluid 组件；放置逻辑复刻原版 BucketItem
+ * （useOn 链路返回 PASS 后客户端自动 fallback 到 useItem → use）——目标格选择（能装流体的方块用点击格，
+ * 否则用点击面相邻格）、其他模组储罐兼容（LiquidBlockContainer）、汽化钩子、下界水蒸发。
+ * 与桶不同：只能倒出、不能装；消耗 1 个蛋（创造不消耗）；可堆叠。
  */
 public class FluidEggItem extends Item {
     public FluidEggItem(Item.Properties properties) {
@@ -61,12 +59,21 @@ public class FluidEggItem extends Item {
             return;
         }
         // 用流体源方块的本地化名（如「水」）
-        tooltip.add(fluidHolder.value().defaultFluidState().createLegacyBlock().getBlock().getName());
+        Component name = fluidHolder.value().defaultFluidState().createLegacyBlock().getBlock().getName();
+        // 颜色来自数据包注册表 chickens:fluid_egg（与物品模型染色同源）；注册表不可用时保持默认色
+        net.minecraft.core.HolderLookup.Provider registries = context.registries();
+        ResourceLocation fluidId = fluidHolder.unwrapKey().map(ResourceKey::location).orElse(null);
+        if (registries != null && fluidId != null) {
+            OptionalInt color = BreedLookups.colorOfFluid(registries, fluidId);
+            if (color.isPresent()) {
+                // TextColor.fromRgb 内部 & 0xFFFFFF，这里补 alpha 位与物品染色写法一致
+                name = name.copy().withStyle(Style.EMPTY.withColor(0xFF000000 | color.getAsInt()));
+            }
+        }
+        tooltip.add(name);
     }
 
-    /**
-     * 复刻 BucketItem.use 的放置分支（本物品不能装流体，无吸取分支）。
-     */
+    /** 复刻 BucketItem.use 的放置分支（本物品不能装流体，无吸取分支） */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
@@ -85,7 +92,7 @@ public class FluidEggItem extends Item {
             net.minecraft.core.Holder<Fluid> fluidHolder = stack.get(ModDataComponents.FLUID.get());
             Fluid fluid = fluidHolder != null ? fluidHolder.value() : null;
             if (!(fluid instanceof FlowingFluid flowing)) {
-                return InteractionResultHolder.fail(stack); // 未定义的流体：不可倒出
+                return InteractionResultHolder.fail(stack);
             }
             BlockState clickedState = level.getBlockState(clickedPos);
             BlockPos target = canBlockContainFluid(player, level, clickedPos, clickedState, fluid) ? clickedPos : adjacentPos;
@@ -103,17 +110,13 @@ public class FluidEggItem extends Item {
         }
     }
 
-    /**
-     * 判断方块能否接收该流体（原版桶同款：LiquidBlockContainer 接口）。
-     */
+    /** 原版桶同款：方块实现 LiquidBlockContainer（储罐等）才能接收该流体 */
     private boolean canBlockContainFluid(@Nullable Player player, Level level, BlockPos pos, BlockState state, Fluid fluid) {
         return state.getBlock() instanceof LiquidBlockContainer liquidContainer
                 && liquidContainer.canPlaceLiquid(player, level, pos, state, fluid);
     }
 
-    /**
-     * 复刻 BucketItem.emptyContents 的放置逻辑（含其他模组储罐兼容、汽化钩子、下界水蒸发）。
-     */
+    /** 复刻 BucketItem.emptyContents 的放置逻辑（含其他模组储罐兼容、汽化钩子、下界水蒸发） */
     private boolean emptyContents(@Nullable Player player, Level level, BlockPos pos, FlowingFluid flowing) {
         BlockState blockstate = level.getBlockState(pos);
         Block block = blockstate.getBlock();
@@ -125,7 +128,7 @@ public class FluidEggItem extends Item {
             return false;
         }
         FluidStack fluidStack = new FluidStack(flowing, FluidType.BUCKET_VOLUME);
-        // 自定义流体汽化钩子（原版桶同款，NeoForge FluidType 扩展点）
+        // 自定义流体汽化钩子（NeoForge FluidType 扩展点）
         if (flowing.getFluidType().isVaporizedOnPlacement(level, pos, fluidStack)) {
             flowing.getFluidType().onVaporize(player, level, pos, fluidStack);
             return true;
@@ -144,7 +147,7 @@ public class FluidEggItem extends Item {
             }
             return true;
         }
-        // 能装流体的方块（其他模组储罐）：把流体交给方块处理，而不是直接放置流体方块
+        // 其他模组储罐：把流体交给方块处理，而不是直接放置流体方块
         if (block instanceof LiquidBlockContainer liquidContainer
                 && liquidContainer.canPlaceLiquid(player, level, pos, blockstate, flowing)) {
             liquidContainer.placeLiquid(level, pos, blockstate, flowing.getSource(false));
@@ -161,10 +164,7 @@ public class FluidEggItem extends Item {
         return true;
     }
 
-    /**
-     * 复刻 BucketItem.playEmptySound：音效走 FluidType.getSound 钩子（岩浆/其他流体各配其音），
-     * 并发送 FLUID_PLACE 游戏事件（幽匿感测体等监听）。
-     */
+    /** 原版桶同款音效：走 FluidType.getSound 钩子并发送 FLUID_PLACE 游戏事件（幽匿感测体等监听） */
     private void playEmptySound(@Nullable Player player, LevelAccessor level, BlockPos pos, Fluid fluid) {
         SoundEvent soundEvent = fluid.getFluidType().getSound(player, level, pos, SoundActions.BUCKET_EMPTY);
         if (soundEvent == null) {

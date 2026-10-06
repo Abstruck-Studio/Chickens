@@ -1,0 +1,9 @@
+{
+  "dimension": "minecraft:overworld",
+  "biomes": [
+    "#minecraft:is_taiga"
+  ],
+  "breeds": [
+    { "breed": "chickens:spruce_log", "weight": 3 }
+  ]
+}

@@ -10,9 +10,7 @@ import org.abstruck.chickens.block.breedingbox.BreedingBoxMenu;
 import org.abstruck.chickens.block.grower.GrowerMenu;
 import org.abstruck.chickens.block.nest.NestMenu;
 
-/**
- * 菜单类型注册（阶段 5：孵化巢、繁殖箱）。
- */
+/** 菜单类型注册 */
 public final class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENU_TYPES =
             DeferredRegister.create(Registries.MENU, Chickens.MODID);

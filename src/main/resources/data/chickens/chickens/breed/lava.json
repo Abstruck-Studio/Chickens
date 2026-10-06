@@ -9,5 +9,10 @@
     1
   ],
   "gain_multiplier": 0.2,
-  "tier": 1
+  "tier": 5,
+  "particles": {
+    "type": "minecraft:lava",
+    "chance": 0.3,
+    "count": 1
+  }
 }

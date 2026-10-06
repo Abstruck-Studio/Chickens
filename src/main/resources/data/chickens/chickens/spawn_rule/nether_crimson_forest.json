@@ -1,0 +1,9 @@
+{
+  "dimension": "minecraft:the_nether",
+  "biomes": [
+    "minecraft:crimson_forest"
+  ],
+  "breeds": [
+    { "breed": "chickens:crimson_stem", "weight": 1 }
+  ]
+}

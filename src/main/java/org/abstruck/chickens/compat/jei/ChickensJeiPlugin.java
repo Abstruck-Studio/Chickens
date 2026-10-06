@@ -27,8 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * JEI 联动：两个配方分类——
- * 杂交配方（chickens:mutation 注册表驱动）与产出配方（chickens:breed 注册表驱动）。
+ * JEI 联动：杂交配方（chickens:mutation 注册表驱动）与产出配方（chickens:breed 注册表驱动）两个分类。
  * 经 @JeiPlugin 由 JEI 自动扫描加载；未安装 JEI 时本类不会被加载。
  */
 @JeiPlugin
@@ -40,20 +39,19 @@ public class ChickensJeiPlugin implements IModPlugin {
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        // 分类 TAB 图标：物品鸡（抓住原版鸡得到的 chickens:chicken 物品）
         mezz.jei.api.gui.drawable.IDrawable icon = registration.getJeiHelpers().getGuiHelper()
                 .createDrawableItemStack(new ItemStack(ModItems.CHICKEN.get()));
         registration.addRecipeCategories(new MutationRecipeCategory(icon), new ProduceRecipeCategory(icon));
     }
 
-    /** 配方催化剂（配方页左上角显示的方块）：鸡杂交 = 繁殖箱、鸡产出 = 鸡窝 */
+    /** 配方催化剂（配方页显示的工作方块）：杂交 = 繁殖箱、产出 = 鸡窝 */
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         registration.addRecipeCatalyst(ModItems.BREEDING_BOX.get(), MutationRecipeCategory.TYPE);
         registration.addRecipeCatalyst(ModItems.NEST.get(), ProduceRecipeCategory.TYPE);
     }
 
-    /** 按组件区分物品子类型：鸡物品按品种、流体蛋按流体、染料蛋按颜色（否则 JEI 合并成无组件版本） */
+    /** 按组件区分子类型：鸡按品种、流体蛋按流体、染料蛋按颜色（否则 JEI 会把变体合并成一个） */
     @Override
     public void registerItemSubtypes(ISubtypeRegistration registration) {
         registration.registerSubtypeInterpreter(ModItems.CHICKEN.get(), interpreter((ItemStack stack, UidContext context) -> {
@@ -86,7 +84,7 @@ public class ChickensJeiPlugin implements IModPlugin {
         };
     }
 
-    /** 把全部变体加进 JEI 物品列表：45 种物品鸡 + 16 色染料蛋 + 全部流体蛋 */
+    /** 物品列表补充全部变体：物品鸡 + 16 色染料蛋 + 全部流体蛋 */
     @Override
     public void registerExtraIngredients(IExtraIngredientRegistration registration) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -124,22 +122,21 @@ public class ChickensJeiPlugin implements IModPlugin {
                 ? minecraft.getConnection().registryAccess()
                 : (minecraft.level != null ? minecraft.level.registryAccess() : null);
         if (access == null) {
-            return; // 尚未进入世界
+            return;
         }
         List<MutationRecipe> mutations = buildMutations(access);
         List<ProduceRecipe> produces = buildProduces(access);
         registration.addRecipes(MutationRecipeCategory.TYPE, mutations);
         registration.addRecipes(ProduceRecipeCategory.TYPE, produces);
-        // 物品鸡的烧制配方（熔炉/烟熏炉/营火，与生鸡肉一致）：
-        // JEI 的用途查询按组件 uid 精确匹配，自动发现的无组件配方匹配不到带品种的变种——
-        // 手动向 vanilla 分类注册「输入含全部变种」的配方（输入槽可循环查看 46 种鸡）
+        // 物品鸡的烧制配方（熔炉/烟熏炉/营火，与生鸡肉一致）：JEI 用途查询按组件 uid 精确匹配，
+        // 自动发现的配方匹配不到带品种的变体，故手动注册「输入含全部变体」的配方
         registerChickenCooking(access, registration);
     }
 
     /** 向 vanilla 熔炉/烟熏炉/营火分类注册变种版烧制配方 */
     private static void registerChickenCooking(RegistryAccess access, IRecipeRegistration registration) {
         List<ItemStack> variants = new ArrayList<>();
-        variants.add(new ItemStack(ModItems.CHICKEN.get())); // 原版物品鸡
+        variants.add(new ItemStack(ModItems.CHICKEN.get()));
         for (ResourceLocation id : BreedLookups.breedRegistry(access).keySet()) {
             ItemStack stack = new ItemStack(ModItems.CHICKEN.get());
             stack.set(ModDataComponents.BREED.get(), id);
@@ -165,29 +162,27 @@ public class ChickensJeiPlugin implements IModPlugin {
                                 ingredient, result.copy(), 0.35F, 600))));
     }
 
-    /** 杂交配方：每条 mutation 规则一条（输出显示新品种，tooltip 列全部加权结果） */
+    /** 杂交配方：每条 mutation 规则一条；父母的 #标签 展开为标签全部成员（槽内循环查看），$parent:标签 结果同理 */
     private static List<MutationRecipe> buildMutations(RegistryAccess access) {
         List<MutationRecipe> recipes = new ArrayList<>();
-        var breeds = BreedLookups.breedRegistry(access);
         for (MutationRule rule : BreedLookups.mutationRegistry(access)) {
             if (rule.parents().size() != 2) {
                 continue;
             }
-            ItemStack parentA = chickenStack(access, rule.parents().get(0));
-            ItemStack parentB = chickenStack(access, rule.parents().get(1));
+            List<ItemStack> parentA = refStacks(access, rule.parents().get(0).value());
+            List<ItemStack> parentB = refStacks(access, rule.parents().get(1).value());
             if (parentA.isEmpty() || parentB.isEmpty()) {
                 continue;
             }
-            // 每个加权结果一个鸡物品（与 allResults 平行）
-            List<ItemStack> resultStacks = new ArrayList<>();
+            List<List<ItemStack>> resultStacks = new ArrayList<>();
             boolean allValid = true;
             for (MutationRule.WeightedResult r : rule.results()) {
-                ItemStack stack = chickenStack(access, r.breed());
-                if (stack.isEmpty()) {
+                List<ItemStack> stacks = refStacks(access, r.breed().value());
+                if (stacks.isEmpty()) {
                     allValid = false;
                     break;
                 }
-                resultStacks.add(stack);
+                resultStacks.add(stacks);
             }
             if (!allValid) {
                 continue;
@@ -196,6 +191,23 @@ public class ChickensJeiPlugin implements IModPlugin {
                     List.copyOf(rule.results())));
         }
         return recipes;
+    }
+
+    /** 引用的展示槽内容：精确品种 → 单个鸡物品；#标签（或 $parent:标签）→ 标签全部成员鸡（槽内循环） */
+    private static List<ItemStack> refStacks(RegistryAccess access,
+            com.mojang.datafixers.util.Either<ResourceLocation, net.minecraft.tags.TagKey<ChickenBreed>> value) {
+        if (value.left().isPresent()) {
+            ItemStack stack = chickenStack(access, value.left().get());
+            return stack.isEmpty() ? List.of() : List.of(stack);
+        }
+        List<ItemStack> stacks = new ArrayList<>();
+        for (ResourceLocation member : BreedLookups.breedsWithTag(access, value.right().orElseThrow())) {
+            ItemStack stack = chickenStack(access, member);
+            if (!stack.isEmpty()) {
+                stacks.add(stack);
+            }
+        }
+        return stacks;
     }
 
     /** 产出配方：每个品种一条（输入鸡物品，输出主产物 + 副产物列表）+ 原版鸡 → 原版鸡蛋 */
@@ -222,7 +234,6 @@ public class ChickensJeiPlugin implements IModPlugin {
             }
             recipes.add(new ProduceRecipe(chicken, List.copyOf(outputs)));
         }
-        // 原版物品鸡（无品种组件）→ 原版鸡蛋
         ItemStack vanillaChicken = new ItemStack(ModItems.CHICKEN.get());
         recipes.add(new ProduceRecipe(vanillaChicken, List.of(
                 new ProduceRecipe.Output(new ItemStack(net.minecraft.world.item.Items.EGG), 1, true))));
@@ -238,8 +249,9 @@ public class ChickensJeiPlugin implements IModPlugin {
         return stack;
     }
 
-    private static ItemStack itemStack(RegistryAccess access, ResourceLocation itemId) {
-        var item = BreedLookups.resolveItem(access, itemId);
+    private static ItemStack itemStack(RegistryAccess access, ChickenBreed.ItemRef ref) {
+        // JEI 无随机源：标签类产物固定显示标签内第一个已注册物品（显示必须稳定）
+        var item = BreedLookups.resolveItemForDisplay(access, ref);
         return item != null ? new ItemStack(item) : ItemStack.EMPTY;
     }
 
@@ -247,8 +259,10 @@ public class ChickensJeiPlugin implements IModPlugin {
     private static ItemStack productStack(RegistryAccess access, ChickenBreed.Product product) {
         ItemStack stack = itemStack(access, product.item());
         if (!stack.isEmpty()) {
-            product.fluid().ifPresent(fluid -> {
-                net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> holder = BreedLookups.fluidHolderOf(access, fluid);
+            product.fluid().ifPresent(fluidRef -> {
+                // JEI 无随机源：标签类流体固定显示标签内第一个已注册流体
+                net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> holder =
+                        BreedLookups.fluidHolderOfForDisplay(access, fluidRef);
                 if (holder != null) {
                     stack.set(ModDataComponents.FLUID.get(), holder);
                 }
@@ -257,7 +271,7 @@ public class ChickensJeiPlugin implements IModPlugin {
         return stack;
     }
 
-    /** 供分类绘制概率文本用的工具：结果表总权重 */
+    /** 结果表总权重（供分类绘制概率文本用） */
     public static double totalWeight(List<MutationRule.WeightedResult> results) {
         return results.stream().mapToDouble(MutationRule.WeightedResult::weight).sum();
     }

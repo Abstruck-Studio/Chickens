@@ -21,17 +21,14 @@ import org.abstruck.chickens.registry.ModEntities;
 import java.util.List;
 
 /**
- * 鸡物品：右键方块放置，生成携带品种 + 三维属性 + 自定义名的资源鸡——
- * 相当于记录完整实体信息的"刷怪蛋"。
- * 无品种组件 = 鸡捕手抓的原版鸡，放出时保持原版鸡。
- * 图标 = 实体实时渲染（客户端扩展经 RegisterClientExtensionsEvent 注册，见 client 包）。
+ * 鸡物品：右键方块放出资源鸡（携带品种/三维属性/自定义名/幼年状态）；
+ * 无品种组件 = 鸡捕手抓的原版鸡，放出后保持原版鸡。图标由实体实时渲染（见 client.ChickenIconRenderer）。
  */
 public class ChickenItem extends Item {
     public ChickenItem(Properties properties) {
         super(properties);
     }
 
-    /** 物品名跟随品种；无品种组件（原版鸡）显示通用名 */
     @Override
     public Component getName(ItemStack stack) {
         var breed = stack.get(ModDataComponents.BREED.get());
@@ -58,7 +55,6 @@ public class ChickenItem extends Item {
         boolean baby = mature != null && !mature;
 
         if (breed == null) {
-            // 原版鸡：原样放出（不变成资源鸡）
             var chicken = EntityType.CHICKEN.create(level);
             if (chicken == null) {
                 return InteractionResult.PASS;
@@ -98,11 +94,9 @@ public class ChickenItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        // 成熟度标记（金色；原版鸡/资源鸡都可为幼年）
         Boolean mature = stack.get(ModDataComponents.MATURE.get());
         tooltip.add(Component.translatable(mature != null && !mature
                 ? "tooltip.chickens.baby" : "tooltip.chickens.adult").withStyle(ChatFormatting.GOLD));
-        // 三项属性：5 段竖条（蓝色 = 进度，灰色 = 空余），等级 1~10 映射为 1~5 段
         var stats = stack.get(ModDataComponents.STATS.get());
         if (stats != null) {
             tooltip.add(statBar("tooltip.chickens.growth", stats.growth()));
@@ -111,7 +105,7 @@ public class ChickenItem extends Item {
         }
     }
 
-    /** 竖条样式：10 段 = 10 级（满级 10 蓝条，最低 1 蓝 + 9 灰） */
+    /** 竖条样式：等级 1~10 映射为 10 段（蓝色 = 进度，灰色 = 空余） */
     private static Component statBar(String labelKey, byte value) {
         int filled = Math.clamp(value, 0, 10);
         return Component.translatable(labelKey)

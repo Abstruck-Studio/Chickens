@@ -1,0 +1,9 @@
+{
+  "dimension": "minecraft:overworld",
+  "biomes": [
+    "#minecraft:is_jungle"
+  ],
+  "breeds": [
+    { "breed": "chickens:jungle_log", "weight": 3 }
+  ]
+}

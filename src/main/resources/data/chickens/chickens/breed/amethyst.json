@@ -1,0 +1,12 @@
+{
+  "item": {
+    "item": "minecraft:amethyst_shard",
+    "weight": 10
+  },
+  "count": [
+    1,
+    1
+  ],
+  "gain_multiplier": 0.2,
+  "tier": 4
+}

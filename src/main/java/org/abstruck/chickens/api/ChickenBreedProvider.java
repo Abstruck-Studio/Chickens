@@ -15,9 +15,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 把品种/杂交规则写成数据包 JSON 的 datagen Provider（对外 API 的一部分）。
- * 用法：其他模组在 GatherDataEvent 里 {@code event.addProvider(new ChickenBreedProvider(event.getGenerator().getPackOutput(), MODID).addBreed(...))}。
- * 输出路径：{@code data/<modId>/chickens/breed/<id>.json}（注册表键命名空间是 chickens，所以中间一段固定是 chickens）。
+ * 把品种/杂交规则写成数据包 JSON 的 datagen Provider（对外 API）：
+ * 其他模组在 GatherDataEvent 里 {@code event.addProvider(new ChickenBreedProvider(packOutput, MODID).addBreed(...))}；
+ * 输出 data/&lt;modId&gt;/chickens/breed/&lt;id&gt;.json（注册表键命名空间是 chickens，中间一段固定）。
  */
 public final class ChickenBreedProvider implements DataProvider {
     private final PackOutput output;

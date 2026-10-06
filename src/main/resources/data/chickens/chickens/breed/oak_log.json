@@ -1,0 +1,23 @@
+{
+  "item": {
+    "item": "minecraft:oak_log",
+    "weight": 10
+  },
+  "count": [
+    1,
+    1
+  ],
+  "gain_multiplier": 0.2,
+  "byproducts": [
+    {
+      "item": "minecraft:oak_sapling",
+      "weight": 30
+    },
+    {
+      "item": "minecraft:oak_leaves",
+      "weight": 10
+    }
+  ],
+  "tier": 2,
+  "tags": "#chickens:log_chicken"
+}

@@ -27,7 +27,7 @@ import org.abstruck.chickens.registry.ModItems;
 
 /**
  * 繁殖箱方块实体：两个成年鸡槽 + 种子槽 + 3×3 输出。
- * 两槽有鸡、有种子、输出有空位 → 爱心进度（30 秒）→ 直接产出**幼年物品鸡**（遗传规则），消耗 1 种子。
+ * 两槽有鸡、有种子、输出有空位 → 爱心进度（30 秒）→ 产出幼年物品鸡（遗传规则），消耗 1 种子。
  */
 public class BreedingBoxBlockEntity extends net.minecraft.world.level.block.entity.BlockEntity {
     public static final int CHICKEN_A = 0;
@@ -98,7 +98,7 @@ public class BreedingBoxBlockEntity extends net.minecraft.world.level.block.enti
                 && !be.items.getStackInSlot(SEEDS).isEmpty()
                 && be.hasOutputSpace();
         if (!canBreed) {
-            be.progress = 0; // 条件不满足：进度重置
+            be.progress = 0;
         } else {
             be.progress += PROGRESS_STEP;
             if (be.progress >= maxProgress()) {
@@ -106,8 +106,7 @@ public class BreedingBoxBlockEntity extends net.minecraft.world.level.block.enti
                 be.breed(level);
             }
         }
-        // 外观变体同步（1.12 roost 同款语义）：is_breeding = 两槽都有鸡；
-        // 有鸡无种子 → 空窗帘（感叹号）；有鸡有种子 → 拉窗帘；无鸡 → 开放
+        // 外观变体：有鸡无种子 → 空窗帘（感叹号）；有鸡有种子 → 拉窗帘；无鸡 → 开放
         BlockState expected = state
                 .setValue(BreedingBoxBlock.IS_BREEDING,
                         !be.items.getStackInSlot(CHICKEN_A).isEmpty() && !be.items.getStackInSlot(CHICKEN_B).isEmpty())
@@ -132,7 +131,7 @@ public class BreedingBoxBlockEntity extends net.minecraft.world.level.block.enti
         ResourceLocation breedA = a.get(ModDataComponents.BREED.get());
         ResourceLocation breedB = b.get(ModDataComponents.BREED.get());
         ItemStack baby = new ItemStack(ModItems.CHICKEN.get());
-        baby.set(ModDataComponents.MATURE.get(), false); // 幼年
+        baby.set(ModDataComponents.MATURE.get(), false);
         if (breedA == null && breedB == null) {
             // 原版鸡对：原版幼鸡物品（无组件）
         } else if (breedA == null || breedB == null) {
@@ -151,7 +150,7 @@ public class BreedingBoxBlockEntity extends net.minecraft.world.level.block.enti
         this.setChanged();
     }
 
-    /** 输出插入：同品种同组件的鸡优先堆叠（上限 16），其次空槽；全满则掉地上 */
+    /** 输出插入：同品种同组件优先堆叠（上限 16），其次空槽；全满则掉地上 */
     private void insertOutput(ItemStack stack) {
         for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT; i++) {
             ItemStack existing = this.items.getStackInSlot(i);
@@ -171,7 +170,6 @@ public class BreedingBoxBlockEntity extends net.minecraft.world.level.block.enti
                 return;
             }
         }
-        // 输出满：掉在地上
         if (this.level != null) {
             Block.popResource(this.level, this.worldPosition, stack);
         }
@@ -211,8 +209,7 @@ public class BreedingBoxBlockEntity extends net.minecraft.world.level.block.enti
         this.progress = tag.getInt("Progress");
     }
 
-    /** 服务端数据变化（放鸡/消耗种子/产出）后把完整数据同步给客户端，
-     *  否则客户端方块实体看不到槽位内容（BER 渲染、漏斗交互都依赖它） */
+    /** 数据变化（放鸡/消耗种子/产出）后同步完整数据给客户端（BER 渲染、漏斗交互都依赖） */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);

@@ -8,5 +8,11 @@
     1
   ],
   "gain_multiplier": 0.2,
+  "byproducts": [
+    {
+      "item": "minecraft:red_sand",
+      "weight": 10
+    }
+  ],
   "tier": 1
 }

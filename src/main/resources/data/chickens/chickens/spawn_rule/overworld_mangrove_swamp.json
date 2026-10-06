@@ -1,0 +1,9 @@
+{
+  "dimension": "minecraft:overworld",
+  "biomes": [
+    "minecraft:mangrove_swamp"
+  ],
+  "breeds": [
+    { "breed": "chickens:mangrove_log", "weight": 3 }
+  ]
+}

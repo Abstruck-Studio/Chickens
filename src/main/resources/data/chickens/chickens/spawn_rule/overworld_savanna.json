@@ -1,0 +1,9 @@
+{
+  "dimension": "minecraft:overworld",
+  "biomes": [
+    "#minecraft:is_savanna"
+  ],
+  "breeds": [
+    { "breed": "chickens:acacia_log", "weight": 3 }
+  ]
+}
