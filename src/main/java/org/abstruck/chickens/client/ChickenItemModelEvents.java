@@ -1,96 +1,37 @@
 package org.abstruck.chickens.client;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ModelEvent;
-import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.abstruck.chickens.Chickens;
-import org.abstruck.chickens.registry.ModDataComponents;
-import org.abstruck.chickens.registry.ModItems;
 
-/** 客户端：鸡物品定制渲染（实体实时图标）+ 方块渲染层 + 界面/颜色注册 */
-@EventBusSubscriber(modid = Chickens.MODID, value = Dist.CLIENT)
+/**
+ * 客户端：把鸡物品模型换成定制渲染模型（isCustomRenderer = true），
+ * 这样物品渲染才会使用 {@link ChickenIconRenderer}（实体实时图标）。
+ *
+ * <p>1.19.2 用 {@link ModelEvent.BakingCompleted}（1.21.1 是 {@code ModelEvent.ModifyBakingResult}）。</p>
+ */
+@Mod.EventBusSubscriber(modid = Chickens.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ChickenItemModelEvents {
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final ModelResourceLocation CHICKEN_ITEM =
-            new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "chicken"), "inventory");
+            new ModelResourceLocation(new ResourceLocation(Chickens.MODID, "chicken"), "inventory");
 
     private ChickenItemModelEvents() {
     }
 
-    /** 把鸡物品模型换成定制渲染模型（isCustomRenderer = true） */
     @SubscribeEvent
-    public static void modifyBakingResult(ModelEvent.ModifyBakingResult event) {
+    public static void onBakingCompleted(ModelEvent.BakingCompleted event) {
         BakedModel original = event.getModels().get(CHICKEN_ITEM);
         if (original != null) {
             event.getModels().put(CHICKEN_ITEM, new ChickenIconBakedModel(original));
+            LOGGER.info("[chickens] 鸡物品模型已切换为实体实时渲染（custom renderer）");
+        } else {
+            LOGGER.error("[chickens] 未找到鸡物品模型 {}，物品图标将退回平面贴图", CHICKEN_ITEM);
         }
-    }
-
-    /** 注册客户端扩展（替代已弃用的 initializeClient） */
-    @SubscribeEvent
-    public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
-        event.registerItem(ChickenItemClientExtensions.INSTANCE, ModItems.CHICKEN.get());
-    }
-
-    /** 三个设施方块的渲染层：模型由 BER（ChickenBoxRenderer）统一光照渲染 */
-    @SubscribeEvent
-    public static void onClientSetup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
-        net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
-                org.abstruck.chickens.registry.ModBlocks.BREEDING_BOX.get(), net.minecraft.client.renderer.RenderType.cutoutMipped());
-        net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
-                org.abstruck.chickens.registry.ModBlocks.GROWER.get(), net.minecraft.client.renderer.RenderType.cutoutMipped());
-        net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
-                org.abstruck.chickens.registry.ModBlocks.NEST.get(), net.minecraft.client.renderer.RenderType.cutoutMipped());
-    }
-
-    @SubscribeEvent
-    public static void registerMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
-        event.register(org.abstruck.chickens.registry.ModMenuTypes.BREEDING_BOX.get(), BreedingBoxScreen::new);
-        event.register(org.abstruck.chickens.registry.ModMenuTypes.GROWER.get(), GrowerScreen::new);
-        event.register(org.abstruck.chickens.registry.ModMenuTypes.NEST.get(), NestScreen::new);
-    }
-
-    /** 染料蛋按 dyed_color、流体蛋按 chickens:fluid 组件染色；
-     *  返回值 0xAARRGGBB 必须补 alpha 位，否则物品透明 */
-    @SubscribeEvent
-    public static void registerItemColors(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item event) {
-        event.register((stack, tintIndex) -> {
-            net.minecraft.world.item.component.DyedItemColor color =
-                    stack.get(net.minecraft.core.component.DataComponents.DYED_COLOR);
-            return color != null ? 0xFF000000 | color.rgb() : 0xFFFFFFFF;
-        }, ModItems.DYE_EGG.get());
-        event.register((stack, tintIndex) -> {
-            net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluidHolder =
-                    stack.get(ModDataComponents.FLUID.get());
-            if (fluidHolder == null) {
-                return 0xFFFFFFFF;
-            }
-            net.minecraft.resources.ResourceLocation fluidId =
-                    fluidHolder.unwrapKey().map(net.minecraft.resources.ResourceKey::location).orElse(null);
-            if (fluidId == null) {
-                return 0xFFFFFFFF;
-            }
-            // 颜色查 chickens:fluid_egg 注册表；不可用时回退内置水/岩浆色
-            if (Minecraft.getInstance().level != null) {
-                java.util.OptionalInt color = org.abstruck.chickens.breed.BreedLookups.colorOfFluid(
-                        Minecraft.getInstance().level.registryAccess(), fluidId);
-                // 本机 JDK 的 OptionalInt 没有 mapToObj（精简版 JDK），只能 isPresent 判断
-                if (color.isPresent()) {
-                    return 0xFF000000 | color.getAsInt();
-                }
-            }
-            if (net.minecraft.resources.ResourceLocation.withDefaultNamespace("water").equals(fluidId)) {
-                return 0xFF3F76E4;
-            }
-            if (net.minecraft.resources.ResourceLocation.withDefaultNamespace("lava").equals(fluidId)) {
-                return 0xFFFF8A28;
-            }
-            return 0xFFFFFFFF;
-        }, ModItems.FLUID_EGG.get());
     }
 }

@@ -8,13 +8,13 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
-import org.abstruck.chickens.registry.ModBlocks;
-import org.abstruck.chickens.registry.ModDataComponents;
-import org.abstruck.chickens.registry.ModItems;
-import org.abstruck.chickens.registry.ModMenuTypes;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.SlotItemHandler;
+import org.abstruck.chickens.item.ItemData;
+import org.abstruck.chickens.registry.ModRegistry;
+
+import javax.annotation.Nonnull;
 
 /** 培育箱菜单：幼年鸡输入槽 + 种子槽 + 成年鸡输出槽 + 玩家背包 */
 public class GrowerMenu extends AbstractContainerMenu {
@@ -26,7 +26,7 @@ public class GrowerMenu extends AbstractContainerMenu {
     }
 
     public GrowerMenu(int containerId, Inventory playerInventory, GrowerBlockEntity blockEntity) {
-        super(ModMenuTypes.GROWER.get(), containerId);
+        super(ModRegistry.GROWER_MENU.get(), containerId);
         this.blockEntity = blockEntity;
         this.data = blockEntity != null ? blockEntity.data : new SimpleContainerData(2);
         IItemHandler handler = blockEntity != null ? blockEntity.getItems() : new ItemStackHandler(3);
@@ -34,20 +34,19 @@ public class GrowerMenu extends AbstractContainerMenu {
 
         this.addSlot(new SlotItemHandler(handler, GrowerBlockEntity.CHICKEN_IN, 62, 20) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
-                Boolean mature = stack.get(ModDataComponents.MATURE.get());
-                return stack.is(ModItems.CHICKEN.get()) && mature != null && !mature;
+            public boolean mayPlace(@Nonnull ItemStack stack) {
+                return stack.is(ModRegistry.CHICKEN.get()) && !ItemData.isMature(stack);
             }
         });
         this.addSlot(new SlotItemHandler(handler, GrowerBlockEntity.SEEDS, 26, 20) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
-                return stack.is(net.neoforged.neoforge.common.Tags.Items.SEEDS); // 任意种子（c:seeds）
+            public boolean mayPlace(@Nonnull ItemStack stack) {
+                return stack.is(net.minecraftforge.common.Tags.Items.SEEDS);
             }
         });
         this.addSlot(new SlotItemHandler(handler, GrowerBlockEntity.CHICKEN_OUT, 134, 20) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
+            public boolean mayPlace(@Nonnull ItemStack stack) {
                 return false;
             }
         });
@@ -81,20 +80,20 @@ public class GrowerMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, invStart, invEnd, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (stack.is(ModItems.CHICKEN.get())
+            } else if (stack.is(ModRegistry.CHICKEN.get())
                     && !this.moveItemStackTo(stack, GrowerBlockEntity.CHICKEN_IN,
                     GrowerBlockEntity.CHICKEN_IN + 1, false)) {
                 if (!this.moveItemStackTo(stack, GrowerBlockEntity.SEEDS,
                         GrowerBlockEntity.SEEDS + 1, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (stack.is(net.neoforged.neoforge.common.Tags.Items.SEEDS)
+            } else if (stack.is(net.minecraftforge.common.Tags.Items.SEEDS)
                     && !this.moveItemStackTo(stack, GrowerBlockEntity.SEEDS,
                     GrowerBlockEntity.SEEDS + 1, false)) {
                 return ItemStack.EMPTY;
             }
             if (stack.isEmpty()) {
-                slot.setByPlayer(ItemStack.EMPTY);
+                slot.set(ItemStack.EMPTY);
             } else {
                 slot.setChanged();
             }
@@ -111,8 +110,7 @@ public class GrowerMenu extends AbstractContainerMenu {
         if (this.blockEntity == null) {
             return true;
         }
-        return AbstractContainerMenu.stillValid(
-                ContainerLevelAccess.create(this.blockEntity.getLevel(), this.blockEntity.getBlockPos()),
-                player, ModBlocks.GROWER.get());
+        return stillValid(ContainerLevelAccess.create(this.blockEntity.getLevel(),
+                this.blockEntity.getBlockPos()), player, ModRegistry.GROWER.get());
     }
 }

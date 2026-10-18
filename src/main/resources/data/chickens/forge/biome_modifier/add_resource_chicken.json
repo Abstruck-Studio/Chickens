@@ -1,5 +1,5 @@
 {
-  "type": "neoforge:add_spawns",
+  "type": "forge:add_spawns",
   "biomes": "#chickens:spawnable_biomes",
   "spawners": {
     "type": "chickens:resource_chicken",

@@ -8,13 +8,13 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
-import org.abstruck.chickens.registry.ModBlocks;
-import org.abstruck.chickens.registry.ModDataComponents;
-import org.abstruck.chickens.registry.ModItems;
-import org.abstruck.chickens.registry.ModMenuTypes;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.SlotItemHandler;
+import org.abstruck.chickens.item.ItemData;
+import org.abstruck.chickens.registry.ModRegistry;
+
+import javax.annotation.Nonnull;
 
 /** 鸡窝菜单：成年鸡槽 + 3×3 输出 + 玩家背包；产出进度条由 ContainerData 同步 */
 public class NestMenu extends AbstractContainerMenu {
@@ -26,7 +26,7 @@ public class NestMenu extends AbstractContainerMenu {
     }
 
     public NestMenu(int containerId, Inventory playerInventory, NestBlockEntity blockEntity) {
-        super(ModMenuTypes.NEST.get(), containerId);
+        super(ModRegistry.NEST_MENU.get(), containerId);
         this.blockEntity = blockEntity;
         this.data = blockEntity != null ? blockEntity.data : new SimpleContainerData(2);
         IItemHandler handler = blockEntity != null ? blockEntity.getItems()
@@ -35,16 +35,15 @@ public class NestMenu extends AbstractContainerMenu {
 
         this.addSlot(new SlotItemHandler(handler, NestBlockEntity.CHICKEN_IN, 36, 38) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
-                Boolean mature = stack.get(ModDataComponents.MATURE.get());
-                return stack.is(ModItems.CHICKEN.get()) && (mature == null || mature);
+            public boolean mayPlace(@Nonnull ItemStack stack) {
+                return stack.is(ModRegistry.CHICKEN.get()) && ItemData.isMature(stack);
             }
         });
         for (int i = 0; i < NestBlockEntity.OUTPUT_COUNT; i++) {
             int slotIndex = NestBlockEntity.OUTPUT_START + i;
             this.addSlot(new SlotItemHandler(handler, slotIndex, 98 + (i % 3) * 18, 20 + (i / 3) * 18) {
                 @Override
-                public boolean mayPlace(ItemStack stack) {
+                public boolean mayPlace(@Nonnull ItemStack stack) {
                     return false;
                 }
             });
@@ -60,7 +59,7 @@ public class NestMenu extends AbstractContainerMenu {
     }
 
     /** 进度百分比（0~100）。total 取 ContainerData 索引 1（按品种实时计算）——
-     *  客户端本地没有鸡槽数据，必须读同步值，不能像其他两个方块那样重算 */
+     *  客户端本地没有鸡槽数据，必须读同步值 */
     public int getScaledProgress() {
         int total = this.data.get(1);
         int progress = this.data.get(0);
@@ -80,13 +79,13 @@ public class NestMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, invStart, invEnd, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (stack.is(ModItems.CHICKEN.get())
+            } else if (stack.is(ModRegistry.CHICKEN.get())
                     && !this.moveItemStackTo(stack, NestBlockEntity.CHICKEN_IN,
                     NestBlockEntity.CHICKEN_IN + 1, false)) {
                 return ItemStack.EMPTY;
             }
             if (stack.isEmpty()) {
-                slot.setByPlayer(ItemStack.EMPTY);
+                slot.set(ItemStack.EMPTY);
             } else {
                 slot.setChanged();
             }
@@ -103,8 +102,7 @@ public class NestMenu extends AbstractContainerMenu {
         if (this.blockEntity == null) {
             return true;
         }
-        return AbstractContainerMenu.stillValid(
-                ContainerLevelAccess.create(this.blockEntity.getLevel(), this.blockEntity.getBlockPos()),
-                player, ModBlocks.NEST.get());
+        return stillValid(ContainerLevelAccess.create(this.blockEntity.getLevel(),
+                this.blockEntity.getBlockPos()), player, ModRegistry.NEST.get());
     }
 }

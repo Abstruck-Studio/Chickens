@@ -2,6 +2,7 @@ package org.abstruck.chickens.item;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,8 +18,9 @@ public class AnalyzerItem extends Item {
     }
 
     @Override
-    public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target, InteractionHand hand) {
-        if (player.level().isClientSide()) {
+    public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target,
+                                                  InteractionHand hand) {
+        if (player.level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (!(target instanceof ResourceChicken chicken)) {
@@ -42,7 +44,7 @@ public class AnalyzerItem extends Item {
     }
 
     private static Component bar(String labelKey, byte value) {
-        int filled = Math.clamp(value, 0, 10);
+        int filled = Mth.clamp(value, 0, 10);
         return Component.translatable(labelKey)
                 .append(Component.literal("|".repeat(filled)).withStyle(ChatFormatting.BLUE))
                 .append(Component.literal("|".repeat(10 - filled)).withStyle(ChatFormatting.DARK_GRAY));

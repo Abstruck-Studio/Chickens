@@ -12,7 +12,7 @@ import java.util.Optional;
 /**
  * 给其他模组用的程序化品种构建器：构建出的 ChickenBreed 交给 ChickenBreedProvider（datagen）
  * 写成 data/&lt;模组id&gt;/chickens/breed/&lt;品种id&gt;.json 随 jar 发布
- * （品种注册表是数据包注册表，没有运行时注册入口；也可以直接手写 JSON）。
+ * （也可以直接手写 JSON）。
  */
 public final class ChickenBreedBuilder {
     private final ChickenBreed.ItemRef item;
@@ -75,7 +75,7 @@ public final class ChickenBreedBuilder {
         return this;
     }
 
-    /** 副产物为流体蛋时携带的流体（写入 chickens:fluid 组件） */
+    /** 副产物为流体蛋时携带的流体 */
     public ChickenBreedBuilder byproduct(ResourceLocation item, int weight, ResourceLocation fluid) {
         this.byproducts.add(new ChickenBreed.Product(ChickenBreed.ItemRef.of(item), weight,
                 Optional.of(ChickenBreed.FluidRef.of(fluid))));
@@ -88,7 +88,7 @@ public final class ChickenBreedBuilder {
         return this;
     }
 
-    /** 主产物为流体蛋且流体写标签（矿词）：产出时从标签内已注册流体随机抽一个 */
+    /** 主产物为流体蛋且流体写标签（矿词） */
     public ChickenBreedBuilder fluid(TagKey<Fluid> fluid) {
         this.mainFluid = Optional.of(ChickenBreed.FluidRef.of(fluid));
         return this;
@@ -100,8 +100,7 @@ public final class ChickenBreedBuilder {
         return this;
     }
 
-    /** 品种所属标签（供杂交规则分组引用）：父母写 {@code "#chickens:xxx"} 命中全部成员，
-     *  结果写 {@code "$parent:xxx"} 返还实际参与的那只成员；可多次调用加多个 */
+    /** 品种所属标签（供杂交规则分组引用） */
     public ChickenBreedBuilder tag(TagKey<ChickenBreed> tag) {
         this.tags.add(tag);
         return this;
@@ -120,14 +119,13 @@ public final class ChickenBreedBuilder {
         return this;
     }
 
-    /** 环境粒子特效（完整参数）：chance = 每 tick 触发概率，count = 每次触发颗数，
-     *  spread = 水平散布半径（体宽 × spread，末影人 = 0.5） */
+    /** 环境粒子特效（完整参数） */
     public ChickenBreedBuilder particles(ResourceLocation particleId, float chance, int count, float spread) {
         this.particles = Optional.of(new ChickenBreed.ParticleConfig(particleId, chance, count, spread));
         return this;
     }
 
-    /** 鸡窝产出间隔（tick，600 = 30 秒）；缺省用内置默认 600；只影响鸡窝，实体鸡节奏保持原版 */
+    /** 鸡窝产出间隔（tick，600 = 30 秒）；缺省用内置默认 600；只影响鸡窝 */
     public ChickenBreedBuilder interval(int ticks) {
         this.interval = Optional.of(ticks);
         return this;

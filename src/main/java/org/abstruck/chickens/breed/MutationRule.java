@@ -43,8 +43,7 @@ public record MutationRule(List<BreedRef> parents, List<WeightedResult> results)
     }
 
     /** 结果引用：精确品种 id 或 {@code $parent:标签} —— 返还实际参与本次繁殖的、带该标签的父本
-     *  （两只都带随机取一；都没带（规则写错）记日志后随机取一兜底）；$parent 后缺命名空间按 chickens: 解析。
-     *  解析在 {@link BreedLookups#roll} 里结合本次实际父母完成。 */
+     *  （两只都带随机取一；都没带（规则写错）记日志后随机取一兜底）；$parent 后缺命名空间按 chickens: 解析。 */
     public record ResultRef(Either<ResourceLocation, TagKey<ChickenBreed>> value) {
         public static final String PARENT_PREFIX = "$parent:";
 
@@ -73,13 +72,13 @@ public record MutationRule(List<BreedRef> parents, List<WeightedResult> results)
                 ResourceLocation tagId = ResourceLocation.tryParse(
                         rest.indexOf(':') >= 0 ? rest : Chickens.MODID + ":" + rest);
                 if (tagId == null) {
-                    return DataResult.error(() -> "无效的 $parent 标记（标签 id 不合法）: " + value);
+                    return DataResult.error("无效的 $parent 标记（标签 id 不合法）: " + value);
                 }
                 return DataResult.success(of(TagKey.create(ChickenRegistries.BREED, tagId)));
             }
             ResourceLocation breedId = ResourceLocation.tryParse(value);
             if (breedId == null) {
-                return DataResult.error(() -> "无效的品种 id: " + value);
+                return DataResult.error("无效的品种 id: " + value);
             }
             return DataResult.success(of(breedId));
         }

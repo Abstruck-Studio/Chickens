@@ -8,13 +8,13 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
-import org.abstruck.chickens.registry.ModBlocks;
-import org.abstruck.chickens.registry.ModDataComponents;
-import org.abstruck.chickens.registry.ModItems;
-import org.abstruck.chickens.registry.ModMenuTypes;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.SlotItemHandler;
+import org.abstruck.chickens.item.ItemData;
+import org.abstruck.chickens.registry.ModRegistry;
+
+import javax.annotation.Nonnull;
 
 /** 繁殖箱菜单：两个成年鸡槽 + 种子槽 + 3×3 输出 + 玩家背包；爱心进度条由 ContainerData 同步 */
 public class BreedingBoxMenu extends AbstractContainerMenu {
@@ -26,7 +26,7 @@ public class BreedingBoxMenu extends AbstractContainerMenu {
     }
 
     public BreedingBoxMenu(int containerId, Inventory playerInventory, BreedingBoxBlockEntity blockEntity) {
-        super(ModMenuTypes.BREEDING_BOX.get(), containerId);
+        super(ModRegistry.BREEDING_BOX_MENU.get(), containerId);
         this.blockEntity = blockEntity;
         this.data = blockEntity != null ? blockEntity.data : new SimpleContainerData(2);
         IItemHandler handler = blockEntity != null ? blockEntity.getItems()
@@ -35,29 +35,27 @@ public class BreedingBoxMenu extends AbstractContainerMenu {
 
         this.addSlot(new SlotItemHandler(handler, BreedingBoxBlockEntity.CHICKEN_A, 44, 38) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
-                Boolean mature = stack.get(ModDataComponents.MATURE.get());
-                return stack.is(ModItems.CHICKEN.get()) && (mature == null || mature);
+            public boolean mayPlace(@Nonnull ItemStack stack) {
+                return stack.is(ModRegistry.CHICKEN.get()) && ItemData.isMature(stack);
             }
         });
         this.addSlot(new SlotItemHandler(handler, BreedingBoxBlockEntity.CHICKEN_B, 62, 38) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
-                Boolean mature = stack.get(ModDataComponents.MATURE.get());
-                return stack.is(ModItems.CHICKEN.get()) && (mature == null || mature);
+            public boolean mayPlace(@Nonnull ItemStack stack) {
+                return stack.is(ModRegistry.CHICKEN.get()) && ItemData.isMature(stack);
             }
         });
         this.addSlot(new SlotItemHandler(handler, BreedingBoxBlockEntity.SEEDS, 8, 38) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
-                return stack.is(net.neoforged.neoforge.common.Tags.Items.SEEDS); // 任意种子（c:seeds）
+            public boolean mayPlace(@Nonnull ItemStack stack) {
+                return stack.is(net.minecraftforge.common.Tags.Items.SEEDS);
             }
         });
         for (int i = 0; i < BreedingBoxBlockEntity.OUTPUT_COUNT; i++) {
             int slotIndex = BreedingBoxBlockEntity.OUTPUT_START + i;
             this.addSlot(new SlotItemHandler(handler, slotIndex, 116 + (i % 3) * 18, 20 + (i / 3) * 18) {
                 @Override
-                public boolean mayPlace(ItemStack stack) {
+                public boolean mayPlace(@Nonnull ItemStack stack) {
                     return false;
                 }
             });
@@ -93,12 +91,12 @@ public class BreedingBoxMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                if (stack.is(ModItems.CHICKEN.get())) {
+                if (stack.is(ModRegistry.CHICKEN.get())) {
                     if (!this.moveItemStackTo(stack, BreedingBoxBlockEntity.CHICKEN_A,
                             BreedingBoxBlockEntity.SEEDS, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (stack.is(net.neoforged.neoforge.common.Tags.Items.SEEDS)) {
+                } else if (stack.is(net.minecraftforge.common.Tags.Items.SEEDS)) {
                     if (!this.moveItemStackTo(stack, BreedingBoxBlockEntity.SEEDS,
                             BreedingBoxBlockEntity.SEEDS + 1, false)) {
                         return ItemStack.EMPTY;
@@ -108,7 +106,7 @@ public class BreedingBoxMenu extends AbstractContainerMenu {
                 }
             }
             if (stack.isEmpty()) {
-                slot.setByPlayer(ItemStack.EMPTY);
+                slot.set(ItemStack.EMPTY);
             } else {
                 slot.setChanged();
             }
@@ -125,8 +123,7 @@ public class BreedingBoxMenu extends AbstractContainerMenu {
         if (this.blockEntity == null) {
             return true;
         }
-        return AbstractContainerMenu.stillValid(
-                ContainerLevelAccess.create(this.blockEntity.getLevel(), this.blockEntity.getBlockPos()),
-                player, ModBlocks.BREEDING_BOX.get());
+        return stillValid(ContainerLevelAccess.create(this.blockEntity.getLevel(),
+                this.blockEntity.getBlockPos()), player, ModRegistry.BREEDING_BOX.get());
     }
 }

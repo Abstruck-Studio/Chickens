@@ -6,7 +6,6 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * 流体蛋定义（数据包注册表 {@code chickens:fluid_egg}）：流体 id + 蛋的渲染颜色。
- * 其他模组可在自己 jar 里带 JSON 零代码增加流体蛋。
  */
 public record FluidEggEntry(ResourceLocation fluid, int color) {
     public static final Codec<FluidEggEntry> CODEC = RecordCodecBuilder.create(

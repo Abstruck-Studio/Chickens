@@ -1,7 +1,9 @@
 package org.abstruck.chickens.client;
 
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -11,13 +13,11 @@ import org.abstruck.chickens.block.nest.NestMenu;
 /** 鸡窝界面（贴图 175×168）；进度用爱心素材从左往右覆盖灰色进度条 */
 public class NestScreen extends AbstractContainerScreen<NestMenu> {
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "textures/gui/nest.png");
-    /** 爱心覆盖素材（26×12） */
+            new ResourceLocation(Chickens.MODID, "textures/gui/nest.png");
     private static final ResourceLocation HEART_BAR =
-            ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "textures/gui/heart_bar.png");
+            new ResourceLocation(Chickens.MODID, "textures/gui/heart_bar.png");
     private static final int HEART_BAR_W = 26;
     private static final int HEART_BAR_H = 12;
-    /** 灰色进度条位置；BAR_W 必须 = HEART_BAR_W 保持 1:1 覆盖 */
     private static final int BAR_X = 62;
     private static final int BAR_Y = 40;
     private static final int BAR_W = 26;
@@ -30,21 +30,28 @@ public class NestScreen extends AbstractContainerScreen<NestMenu> {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(graphics, mouseX, mouseY);
+    public void render(PoseStack pose, int mouseX, int mouseY, float partialTick) {
+        super.render(pose, mouseX, mouseY, partialTick);
+        this.renderTooltip(pose, mouseX, mouseY);
+    }
+
+    /** 只画容器标题，不画原版「物品栏」标签 */
+    @Override
+    protected void renderLabels(PoseStack pose, int mouseX, int mouseY) {
+        this.font.draw(pose, this.title, (float) this.titleLabelX, (float) this.titleLabelY, 4210752);
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+    protected void renderBg(PoseStack pose, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.setShaderTexture(0, TEXTURE);
+        this.blit(pose, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
         int fill = this.menu.getScaledProgress() * BAR_W / 100;
         if (fill > 0) {
-            int barX = this.leftPos + BAR_X;
-            int barY = this.topPos + BAR_Y;
-            graphics.enableScissor(barX, barY, barX + fill, barY + BAR_H);
-            graphics.blit(HEART_BAR, barX, barY, 0, 0, BAR_W, BAR_H, HEART_BAR_W, HEART_BAR_H);
-            graphics.disableScissor();
+            RenderSystem.setShaderTexture(0, HEART_BAR);
+            net.minecraft.client.gui.GuiComponent.blit(pose, this.leftPos + BAR_X, this.topPos + BAR_Y,
+                    0.0F, 0.0F, fill, BAR_H, HEART_BAR_W, HEART_BAR_H);
         }
     }
 }

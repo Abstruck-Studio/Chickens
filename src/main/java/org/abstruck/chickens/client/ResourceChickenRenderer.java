@@ -1,4 +1,4 @@
-package org.abstruck.chickens.entity.chicken;
+package org.abstruck.chickens.client;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
@@ -8,26 +8,26 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.abstruck.chickens.Chickens;
 import org.abstruck.chickens.breed.ChickenBreed;
-import org.abstruck.chickens.registry.ModEntities;
+import org.abstruck.chickens.entity.chicken.ResourceChicken;
+import org.abstruck.chickens.registry.ModRegistry;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * 资源鸡渲染器：复用原版鸡模型几何体（ChickenModel + ModelLayers.CHICKEN），纹理按品种选择：
- * 品种 JSON 的 texture 字段 → 约定路径 {@code chickens:textures/entity/chicken/<品种id>.png} → 原版鸡纹理。
+ * 品种数据的 texture 字段 → 约定路径 {@code chickens:textures/entity/chicken/<品种id>.png} → 原版鸡纹理。
  */
 public class ResourceChickenRenderer extends MobRenderer<ResourceChicken, ChickenModel<ResourceChicken>> {
     private static final org.slf4j.Logger LOGGER = LogUtils.getLogger();
 
     private static final ResourceLocation FALLBACK_TEXTURE =
-            ResourceLocation.withDefaultNamespace("textures/entity/chicken/chicken.png");
+            new ResourceLocation("textures/entity/chicken/chicken.png");
 
     /** 品种 id → 最终纹理（含 .png），缓存避免每帧解析 */
     private static final Map<ResourceLocation, ResourceLocation> TEXTURE_CACHE = new HashMap<>();
@@ -40,6 +40,9 @@ public class ResourceChickenRenderer extends MobRenderer<ResourceChicken, Chicke
     public ResourceLocation getTextureLocation(ResourceChicken entity) {
         try {
             ResourceLocation breedId = entity.getBreedId();
+            if (breedId == null) {
+                return FALLBACK_TEXTURE;
+            }
             ResourceLocation texture = TEXTURE_CACHE.get(breedId);
             if (texture == null) {
                 texture = resolveTexture(entity, breedId);
@@ -56,8 +59,7 @@ public class ResourceChickenRenderer extends MobRenderer<ResourceChicken, Chicke
         }
     }
 
-    /** 复刻原版 ChickenRenderer 的翅膀动画：基类 getBob 默认返回 tickCount + partialTick（翅膀一直转），
-     *  需用 (sin(flap)+1) × flapSpeed 产生真正的拍动 */
+    /** 复刻原版 ChickenRenderer 的翅膀动画 */
     @Override
     protected float getBob(ResourceChicken chicken, float partialTicks) {
         float flap = Mth.lerp(partialTicks, chicken.oFlap, chicken.flap);
@@ -66,12 +68,12 @@ public class ResourceChickenRenderer extends MobRenderer<ResourceChicken, Chicke
     }
 
     private static ResourceLocation resolveTexture(ResourceChicken entity, ResourceLocation breedId) {
-        ChickenBreed breed = entity.getBreed(entity.level().registryAccess());
+        ChickenBreed breed = entity.getBreed();
         if (breed != null && breed.texture().isPresent()) {
             return withPng(breed.texture().get());
         }
-        ResourceLocation derived = withPng(ResourceLocation.fromNamespaceAndPath(
-                Chickens.MODID, "textures/entity/chicken/" + breedId.getPath()));
+        ResourceLocation derived = withPng(new ResourceLocation(Chickens.MODID,
+                "textures/entity/chicken/" + breedId.getPath()));
         if (Minecraft.getInstance().getResourceManager().getResource(derived).isPresent()) {
             return derived;
         }
@@ -79,17 +81,21 @@ public class ResourceChickenRenderer extends MobRenderer<ResourceChicken, Chicke
     }
 
     private static ResourceLocation withPng(ResourceLocation location) {
-        return ResourceLocation.fromNamespaceAndPath(location.getNamespace(), location.getPath() + ".png");
+        return new ResourceLocation(location.getNamespace(), location.getPath() + ".png");
     }
 
-    /** 渲染器注册（仅客户端） */
-    @EventBusSubscriber(modid = Chickens.MODID, value = Dist.CLIENT)
-    public static class ClientEvents {
+    /** 实体渲染器注册（仅客户端） */
+    @Mod.EventBusSubscriber(modid = Chickens.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static final class ClientEvents {
+        private ClientEvents() {
+        }
+
         @SubscribeEvent
-        public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerEntityRenderer(ModEntities.RESOURCE_CHICKEN.get(), ResourceChickenRenderer::new);
+        public static void registerRenderers(
+                net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+            event.registerEntityRenderer(ModRegistry.RESOURCE_CHICKEN.get(), ResourceChickenRenderer::new);
             // 染料蛋投掷实体（用物品模型渲染，自动带色）
-            event.registerEntityRenderer(ModEntities.THROWN_DYE_EGG.get(),
+            event.registerEntityRenderer(ModRegistry.THROWN_DYE_EGG.get(),
                     net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         }
     }
