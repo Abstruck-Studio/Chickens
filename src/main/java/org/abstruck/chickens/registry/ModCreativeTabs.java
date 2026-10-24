@@ -10,7 +10,7 @@ import org.abstruck.chickens.breed.BreedLookups;
 import org.abstruck.chickens.breed.ChickenBreed;
 import org.abstruck.chickens.breed.ChickenData;
 import org.abstruck.chickens.breed.FluidEggEntry;
-import org.abstruck.chickens.item.DyeEggItem;
+import org.abstruck.chickens.item.DyeEggColors;
 import org.abstruck.chickens.item.ItemData;
 
 import java.util.Comparator;
@@ -68,11 +68,9 @@ public final class ModCreativeTabs extends CreativeModeTab {
                 items.add(egg);
             }
         }
-        // 16 种染色蛋（rgb 统一截断低 24 位与配方一致）
+        // 16 种染色蛋（平均色见 DyeEggColors，与配方里的 NBT 一致）
         for (DyeColor dye : DyeColor.values()) {
-            ItemStack egg = new ItemStack(ModRegistry.DYE_EGG.get());
-            ItemData.setColor(egg, DyeEggItem.rgbOf(dye));
-            items.add(egg);
+            items.add(DyeEggColors.stack(dye));
         }
         items.add(new ItemStack(ModRegistry.CHICKEN.get()));
         List<Map.Entry<ResourceLocation, ChickenBreed>> breeds = ChickenData.sortedBreeds();

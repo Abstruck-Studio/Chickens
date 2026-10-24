@@ -3,6 +3,7 @@ package org.abstruck.chickens.compat.jei;
 import com.mojang.datafixers.util.Either;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
@@ -11,12 +12,15 @@ import mezz.jei.api.registration.ISubtypeRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import org.abstruck.chickens.Chickens;
 import org.abstruck.chickens.breed.BreedLookups;
 import org.abstruck.chickens.breed.ChickenBreed;
 import org.abstruck.chickens.breed.ChickenData;
+import org.abstruck.chickens.breed.FluidEggEntry;
 import org.abstruck.chickens.breed.MutationRule;
+import org.abstruck.chickens.item.DyeEggColors;
 import org.abstruck.chickens.item.ItemData;
 import org.abstruck.chickens.registry.ModRegistry;
 
@@ -33,6 +37,8 @@ public class ChickensJeiPlugin implements IModPlugin {
     private static IJeiRuntime runtime;
     /** 是否已经在「数据已就绪」的情况下注册过配方（避免重复注册） */
     private static boolean registeredWithData;
+    /** 是否已经补全 JEI 物品列表变体（移除空白蛋 + 加 16 色/流体/品种鸡） */
+    private static boolean ingredientsAdded;
 
     @Override
     public ResourceLocation getPluginUid() {
@@ -91,12 +97,45 @@ public class ChickensJeiPlugin implements IModPlugin {
      * 此时用 JEI 运行时的 addRecipes 补注册一次，避免配方页空白。
      */
     public static void tryLateRegister() {
-        if (runtime == null || registeredWithData || ChickenData.get().breeds().isEmpty()) {
+        if (runtime == null) {
             return;
         }
-        runtime.getRecipeManager().addRecipes(MutationRecipeCategory.TYPE, buildMutations());
-        runtime.getRecipeManager().addRecipes(ProduceRecipeCategory.TYPE, buildProduces());
-        registeredWithData = true;
+        if (!registeredWithData && !ChickenData.get().breeds().isEmpty()) {
+            runtime.getRecipeManager().addRecipes(MutationRecipeCategory.TYPE, buildMutations());
+            runtime.getRecipeManager().addRecipes(ProduceRecipeCategory.TYPE, buildProduces());
+            registeredWithData = true;
+        }
+        addIngredientVariants();
+    }
+
+    /**
+     * JEI 物品列表：移除没有颜色的「空白」染料蛋/流体蛋，补上 16 色染料蛋、各流体蛋与全部品种鸡。
+     * 数据未就绪（多人服务器首次进入）时等数据同步后的 tryLateRegister 再执行。
+     */
+    private static void addIngredientVariants() {
+        if (runtime == null || ingredientsAdded || ChickenData.get().breeds().isEmpty()) {
+            return;
+        }
+        var manager = runtime.getIngredientManager();
+        manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, List.of(
+                new ItemStack(ModRegistry.DYE_EGG.get()),
+                new ItemStack(ModRegistry.FLUID_EGG.get())));
+        List<ItemStack> added = new ArrayList<>();
+        for (DyeColor dye : DyeColor.values()) {
+            added.add(DyeEggColors.stack(dye));
+        }
+        for (FluidEggEntry entry : ChickenData.get().fluidEggs().values()) {
+            if (BreedLookups.fluidOf(entry.fluid()) != null) {
+                ItemStack egg = new ItemStack(ModRegistry.FLUID_EGG.get());
+                ItemData.setFluid(egg, entry.fluid());
+                added.add(egg);
+            }
+        }
+        for (ResourceLocation breed : ChickenData.get().breeds().keySet()) {
+            added.add(chickenStack(breed));
+        }
+        manager.addIngredientsAtRuntime(VanillaTypes.ITEM_STACK, added);
+        ingredientsAdded = true;
     }
 
     /** 杂交配方：每条 mutation 规则一条；父母的 #标签 展开为标签全部成员（槽内循环查看） */

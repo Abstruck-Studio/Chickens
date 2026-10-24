@@ -13,7 +13,8 @@ import org.abstruck.chickens.registry.ModRegistry;
 
 /**
  * 鸡捕手：右键任意鸡（含原版鸡）→ 捕获为鸡物品，品种/三维属性/自定义名/幼年状态完整保存；
- * 原版鸡捕获物不带品种数据，放出后仍是原版鸡。捕手消耗 1 个（创造模式不消耗）。
+ * 原版鸡捕获物不带品种数据，放出后仍是原版鸡。
+ * 128 点耐久：每次成功捕获消耗 1 点，耐久耗尽后物品损毁（创造模式不消耗）。
  */
 public class ChickenCatcherItem extends Item {
     public ChickenCatcherItem(Properties properties) {
@@ -41,12 +42,11 @@ public class ChickenCatcherItem extends Item {
             chickenItem.setHoverName(chicken.getCustomName());
         }
         target.discard();
-        if (!player.getAbilities().instabuild) {
-            stack.shrink(1);
-        }
         if (!player.getInventory().add(chickenItem)) {
             player.drop(chickenItem, false);
         }
+        // 128 点耐久：每次捕获消耗 1 点，耗尽时损毁；创造模式自动不消耗
+        stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(hand));
         return InteractionResult.SUCCESS;
     }
 }

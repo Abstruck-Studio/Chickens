@@ -65,13 +65,14 @@ public final class ModRegistry {
                     .strength(2.0F).sound(SoundType.WOOD).noOcclusion()));
 
     // ------------------------------------------------------------------ 物品
-    /** 鸡物品：品种存 NBT，右键放置生成对应资源鸡 */
+    /** 鸡物品：品种存 NBT，右键放置生成对应资源鸡（只进自定义 Tab，避免 Misc 里出现重复/空白条目） */
     public static final net.minecraftforge.registries.RegistryObject<Item> CHICKEN =
-            ITEMS.register("chicken", () -> new ChickenItem(new Item.Properties().stacksTo(16).tab(CreativeModeTab.TAB_MISC)));
+            ITEMS.register("chicken", () -> new ChickenItem(new Item.Properties().stacksTo(16)));
 
-    /** 鸡捕手：右键把鸡变成鸡物品（原版鸡按默认品种捕获） */
+    /** 鸡捕手：右键把鸡变成鸡物品（原版鸡按默认品种捕获）；128 点耐久，每次捕获消耗 1 点 */
     public static final net.minecraftforge.registries.RegistryObject<Item> CATCHER =
-            ITEMS.register("catcher", () -> new ChickenCatcherItem(new Item.Properties().tab(CreativeModeTab.TAB_TOOLS)));
+            ITEMS.register("catcher", () -> new ChickenCatcherItem(
+                    new Item.Properties().durability(128).tab(CreativeModeTab.TAB_TOOLS)));
 
     public static final net.minecraftforge.registries.RegistryObject<Item> BREEDING_BOX_ITEM =
             ITEMS.register("breeding_box", () -> new BlockItem(BREEDING_BOX.get(), new Item.Properties().tab(CreativeModeTab.TAB_DECORATIONS)));
@@ -86,13 +87,13 @@ public final class ModRegistry {
     public static final net.minecraftforge.registries.RegistryObject<Item> CHICKEN_ANALYZER =
             ITEMS.register("chicken_analyzer", () -> new AnalyzerItem(new Item.Properties().tab(CreativeModeTab.TAB_TOOLS)));
 
-    /** 流体蛋：流体存 NBT，右键倒出；颜色由 {@code chickens:fluid_egg} 数据定义 */
+    /** 流体蛋：流体存 NBT，右键倒出；颜色由 {@code chickens:fluid_egg} 数据定义（只进自定义 Tab） */
     public static final net.minecraftforge.registries.RegistryObject<Item> FLUID_EGG =
-            ITEMS.register("fluid_egg", () -> new FluidEggItem(new Item.Properties().stacksTo(64).tab(CreativeModeTab.TAB_MISC)));
+            ITEMS.register("fluid_egg", () -> new FluidEggItem(new Item.Properties().stacksTo(64)));
 
-    /** 染料蛋：投掷命中孵出对应染料鸡 */
+    /** 染料蛋：投掷命中孵出对应染料鸡（只进自定义 Tab） */
     public static final net.minecraftforge.registries.RegistryObject<Item> DYE_EGG =
-            ITEMS.register("dye_egg", () -> new DyeEggItem(new Item.Properties().stacksTo(16).tab(CreativeModeTab.TAB_MISC)));
+            ITEMS.register("dye_egg", () -> new DyeEggItem(new Item.Properties().stacksTo(16)));
 
     // ------------------------------------------------------------------ 方块实体
     public static final net.minecraftforge.registries.RegistryObject<BlockEntityType<BreedingBoxBlockEntity>> BREEDING_BOX_BE =

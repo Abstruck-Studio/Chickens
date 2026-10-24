@@ -36,15 +36,9 @@ public class DyeEggItem extends Item {
         return ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
     }
 
-    /** 按 rgb 找对应 DyeColor（找不到返回 null）；两边都截断到低 24 位再比较 */
+    /** 按 rgb 找对应 DyeColor（找不到返回 null）；配色与反查见 {@link DyeEggColors} */
     public static DyeColor dyeColorOf(int rgb) {
-        int plain = rgb & 0xFFFFFF;
-        for (DyeColor dye : DyeColor.values()) {
-            if (rgbOf(dye) == plain) {
-                return dye;
-            }
-        }
-        return null;
+        return DyeEggColors.dyeOf(rgb);
     }
 
     @Override

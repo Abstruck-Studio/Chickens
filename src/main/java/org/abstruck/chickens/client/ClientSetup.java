@@ -36,13 +36,9 @@ public final class ClientSetup {
         });
     }
 
-    /** 染料蛋按物品 NBT 颜色、流体蛋按流体颜色染色；返回值 0xAARRGGBB 必须补 alpha 位 */
+    /** 流体蛋按流体颜色染色（染料蛋颜色已烘进贴图，不再乘色）；返回值 0xAARRGGBB 必须补 alpha 位 */
     @SubscribeEvent
     public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
-        event.register((stack, tintIndex) -> {
-            int color = ItemData.getColor(stack);
-            return color < 0 ? 0xFFFFFFFF : 0xFF000000 | color;
-        }, ModRegistry.DYE_EGG.get());
         event.register((stack, tintIndex) -> {
             ResourceLocation fluidId = ItemData.getFluidId(stack);
             if (fluidId == null) {

@@ -32,7 +32,7 @@ public class ProduceRecipeCategory implements IRecipeCategory<ProduceRecipe> {
     private final Component title;
 
     public ProduceRecipeCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createBlankDrawable(162, 60);
+        this.background = guiHelper.createBlankDrawable(162, 64);
         this.icon = guiHelper.createDrawableItemStack(new ItemStack(ModRegistry.CHICKEN.get()));
         this.slot = guiHelper.getSlotDrawable();
         this.title = Component.translatable("jei.chickens.produce");
@@ -86,7 +86,10 @@ public class ProduceRecipeCategory implements IRecipeCategory<ProduceRecipe> {
         for (int i = 0; i < outputs.size(); i++) {
             ProduceRecipe.Output output = outputs.get(i);
             int pct = output.weight() * 100 / total;
-            font.draw(pose, pct + "%", X + 37 + i * 26, 42, 0xFF3F3F3F);
+            String text = pct + "%";
+            // 槽位中心 x+8；槽底 y+16，下一行留 5px 间距 → y = 43（分类高 64）
+            int slotX = X + 38 + i * 26;
+            font.draw(pose, text, slotX + 8 - font.width(text) / 2, 43, 0xFF3F3F3F);
         }
     }
 }

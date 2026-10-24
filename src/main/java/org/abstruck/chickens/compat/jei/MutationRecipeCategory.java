@@ -32,7 +32,7 @@ public class MutationRecipeCategory implements IRecipeCategory<MutationRecipe> {
     private final Component title;
 
     public MutationRecipeCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createBlankDrawable(162, 60);
+        this.background = guiHelper.createBlankDrawable(162, 64);
         this.icon = guiHelper.createDrawableItemStack(new ItemStack(ModRegistry.CHICKEN.get()));
         this.slot = guiHelper.getSlotDrawable();
         this.title = Component.translatable("jei.chickens.mutation");
@@ -86,7 +86,9 @@ public class MutationRecipeCategory implements IRecipeCategory<MutationRecipe> {
         for (int i = 0; i < results.size(); i++) {
             MutationRule.WeightedResult result = results.get(i);
             String pct = String.format("%.0f%%", result.weight() / total * 100);
-            font.draw(pose, pct, X + 73 + i * 26, 42, 0xFF3F3F3F);
+            // 槽位中心 x+8；槽底 y+16，下一行留 5px 间距 → y = 43（分类高 64）
+            int slotX = X + 74 + i * 26;
+            font.draw(pose, pct, slotX + 8 - font.width(pct) / 2, 43, 0xFF3F3F3F);
         }
     }
 }
