@@ -2,32 +2,34 @@ package org.abstruck.chickens.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.client.multiplayer.ClientLevel;
 import org.abstruck.chickens.entity.chicken.ResourceChicken;
-import org.abstruck.chickens.registry.ModDataComponents;
-import org.abstruck.chickens.registry.ModEntities;
+import org.abstruck.chickens.item.ItemData;
+import org.abstruck.chickens.registry.ModRegistry;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * 鸡物品图标 = 实体实时渲染：每品种缓存一只客户端假实体（不入世界、不 tick，只取模型/纹理），
- * 用 EntityRenderDispatcher 直接画进物品渲染管线；无品种组件的渲染原版鸡。
+ * 用 EntityRenderDispatcher 直接画进物品渲染管线；无品种数据的渲染原版鸡。
  */
 public class ChickenIconRenderer extends BlockEntityWithoutLevelRenderer {
     private static final Map<ResourceLocation, ResourceChicken> DUMMIES = new HashMap<>();
     private static net.minecraft.world.entity.animal.Chicken vanillaDummy;
 
     public ChickenIconRenderer() {
-        super(null, null);
+        super(Minecraft.getInstance().getBlockEntityRenderDispatcher(),
+                Minecraft.getInstance().getEntityModels());
     }
 
     @Override
@@ -42,15 +44,14 @@ public class ChickenIconRenderer extends BlockEntityWithoutLevelRenderer {
         if (dummy == null) {
             return;
         }
-        // 幼年/成年随物品组件切换（幼年模型自动缩小）
-        Boolean mature = stack.get(ModDataComponents.MATURE.get());
+        // 幼年/成年随物品数据切换（幼年模型自动缩小）
         if (dummy instanceof net.minecraft.world.entity.AgeableMob ageable) {
-            ageable.setBaby(mature != null && !mature);
+            ageable.setBaby(!ItemData.isMature(stack));
         }
         poseStack.pushPose();
         if (context == ItemDisplayContext.GUI) {
             // 传入姿态已带 ×16（16px = 1 单位）；管线已 translate(-0.5,-0.5,-0.5)。
-            // 缩放 0.95 → 鸡约 10px 高；不旋转 = 正面朝向；y 为调校后的净偏移
+            // 缩放 0.95 → 鸡约 10px 高；不旋转 = 正面朝向
             poseStack.translate(0.5D, 0.15D - 0.1875D + 0.0625D, 0.5D);
             poseStack.scale(0.95F, 0.95F, 0.95F);
         } else {
@@ -67,9 +68,9 @@ public class ChickenIconRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.popPose();
     }
 
-    /** 品种 id → 假实体（原版鸡用 null key 单例）；世界切换时重建缓存 */
+    /** 品种 id → 假实体（原版鸡用单独字段）；世界切换时重建缓存 */
     private static LivingEntity dummyFor(ClientLevel level, ItemStack stack) {
-        ResourceLocation breed = stack.get(ModDataComponents.BREED.get());
+        ResourceLocation breed = ItemData.getBreed(stack);
         if (breed == null) {
             if (vanillaDummy == null || vanillaDummy.level() != level) {
                 vanillaDummy = EntityType.CHICKEN.create(level);
@@ -78,7 +79,7 @@ public class ChickenIconRenderer extends BlockEntityWithoutLevelRenderer {
         }
         ResourceChicken cached = DUMMIES.get(breed);
         if (cached == null || cached.level() != level) {
-            cached = ModEntities.RESOURCE_CHICKEN.get().create(level);
+            cached = ModRegistry.RESOURCE_CHICKEN.get().create(level);
             if (cached != null) {
                 cached.setBreed(breed);
                 DUMMIES.put(breed, cached);

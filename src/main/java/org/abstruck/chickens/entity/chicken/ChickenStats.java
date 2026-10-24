@@ -2,24 +2,16 @@ package org.abstruck.chickens.entity.chicken;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
 
-/** 鸡的三维属性（各 1~10）：实体上走 SynchedEntityData，鸡物品上走 {@code chickens:stats} 组件 */
+/** 鸡的三维属性（各 1~10）：实体上走 SynchedEntityData，鸡物品上走物品 NBT（见 ItemData） */
 public record ChickenStats(byte growth, byte gain, byte strength) {
     public static final ChickenStats DEFAULT = new ChickenStats((byte) 1, (byte) 1, (byte) 1);
 
     public static final Codec<ChickenStats> CODEC = RecordCodecBuilder.create(
             (RecordCodecBuilder.Instance<ChickenStats> instance) -> instance.group(
-                    Codec.BYTE.fieldOf("growth").forGetter(ChickenStats::growth),
-                    Codec.BYTE.fieldOf("gain").forGetter(ChickenStats::gain),
-                    Codec.BYTE.fieldOf("strength").forGetter(ChickenStats::strength)
-            ).apply(instance, ChickenStats::new));
-
-    public static final StreamCodec<ByteBuf, ChickenStats> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.BYTE, ChickenStats::growth,
-            ByteBufCodecs.BYTE, ChickenStats::gain,
-            ByteBufCodecs.BYTE, ChickenStats::strength,
-            ChickenStats::new);
+                    Codec.INT.fieldOf("growth").forGetter(stats -> (int) stats.growth()),
+                    Codec.INT.fieldOf("gain").forGetter(stats -> (int) stats.gain()),
+                    Codec.INT.fieldOf("strength").forGetter(stats -> (int) stats.strength())
+            ).apply(instance, (growth, gain, strength) ->
+                    new ChickenStats((byte) (int) growth, (byte) (int) gain, (byte) (int) strength)));
 }

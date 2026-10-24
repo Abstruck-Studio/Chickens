@@ -1,0 +1,11 @@
+# 构建产物
+build/
+# 运行目录
+run/
+run-data/
+# Gradle / IDE
+.gradle/
+.idea/
+*.log
+# JEI API 缓存
+.jeiapi/

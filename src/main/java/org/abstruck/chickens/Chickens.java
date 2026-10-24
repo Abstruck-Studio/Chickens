@@ -1,118 +1,46 @@
 package org.abstruck.chickens;
 
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import org.abstruck.chickens.breed.BreedLookups;
-import org.abstruck.chickens.breed.ChickenRegistries;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.abstruck.chickens.config.ChickenConfig;
-import org.abstruck.chickens.registry.ModBiomeModifiers;
-import org.abstruck.chickens.registry.ModBlockEntities;
-import org.abstruck.chickens.registry.ModBlocks;
-import org.abstruck.chickens.registry.ModDataComponents;
-import org.abstruck.chickens.registry.ModEntities;
-import org.abstruck.chickens.registry.ModItems;
-import org.abstruck.chickens.registry.ModMenuTypes;
+import org.abstruck.chickens.entity.chicken.ChickenSpawnEvents;
+import org.abstruck.chickens.network.ChickensNetwork;
+import org.abstruck.chickens.registry.ModRegistry;
 
-@Mod("chickens")
+/**
+ * Chickens（Forge 1.20.1 移植版）。
+ *
+ * <p>与 1.21.1 版功能一致：资源鸡、三维属性育种、杂交规则、自动化设施、
+ * 数据包驱动的品种/杂交/流体蛋/自然生成；物品数据用 NBT（组件系统自 1.20.5 起才有）。</p>
+ */
+@Mod(Chickens.MODID)
 public class Chickens {
     public static final String MODID = "chickens";
 
-    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
-            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+    public Chickens() {
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-    /** 品种 Tab：内容在 addTabContents 里填充 */
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CHICKEN_TAB =
-            CREATIVE_MODE_TABS.register("chickens", () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.chickens"))
-                    .icon(() -> new ItemStack(ModItems.CHICKEN.get()))
-                    .displayItems((parameters, output) -> {
-                    })
-                    .build());
+        ModRegistry.BLOCKS.register(modBus);
+        ModRegistry.ITEMS.register(modBus);
+        ModRegistry.BLOCK_ENTITIES.register(modBus);
+        ModRegistry.ENTITY_TYPES.register(modBus);
+        ModRegistry.MENU_TYPES.register(modBus);
+        ModRegistry.BIOME_MODIFIER_SERIALIZERS.register(modBus);
+        ModRegistry.CREATIVE_TABS.register(modBus);
 
-    public Chickens(IEventBus modEventBus, ModContainer modContainer) {
-        BLOCKS.register(modEventBus);
-        ITEMS.register(modEventBus);
-        ModEntities.ENTITY_TYPES.register(modEventBus);
-        ModDataComponents.DATA_COMPONENTS.register(modEventBus);
-        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
-        ModMenuTypes.MENU_TYPES.register(modEventBus);
-        ModBiomeModifiers.SERIALIZERS.register(modEventBus);
-        CREATIVE_MODE_TABS.register(modEventBus);
-        // 触发持有 DeferredRegister 条目的类初始化：必须在注册表冻结（RegisterEvent）前完成注册，否则运行时才初始化会崩
-        ModItems.init();
-        ModBlocks.init();
+        ChickensNetwork.register();
 
-        // 数据包注册表：breed（品种）/ mutation（杂交）/ fluid_egg（流体蛋）/ spawn_rule（自然生成），带客户端同步
-        modEventBus.addListener(ChickenRegistries::registerDataPackRegistries);
+        // 服务端数据包内容载入 / 同步
+        MinecraftForge.EVENT_BUS.register(org.abstruck.chickens.breed.ChickenDataEvents.class);
+        // 自然生成的品种分配
+        MinecraftForge.EVENT_BUS.register(ChickenSpawnEvents.class);
+        // 染料蛋配方兜底染色
+        MinecraftForge.EVENT_BUS.register(CommonEvents.class);
 
-        modEventBus.addListener(ModEntities::registerAttributes);
-
-        // 繁殖箱/培育箱/鸡窝的物品能力（漏斗/管道兼容）
-        modEventBus.addListener(ModBlockEntities::registerCapabilities);
-        // 流体蛋的物品流体能力（储罐类方块兼容）
-        modEventBus.addListener(ModItems::registerCapabilities);
-
-        // 品种 Tab 内容（需要注册表，只能在事件里填）
-        modEventBus.addListener(Chickens::addTabContents);
-
-        modEventBus.addListener(ModEntities::registerSpawnPlacements);
-
-        // 游戏事件：自然生成品种分配
-        NeoForge.EVENT_BUS.register(org.abstruck.chickens.entity.chicken.ChickenSpawnEvents.class);
-
-        modContainer.registerConfig(ModConfig.Type.COMMON, ChickenConfig.SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ChickenConfig.SPEC);
     }
-
-    /** 品种 Tab 内容：工具/方块/蛋 + 原版鸡物品 + 全部品种鸡（按 Tier 分组，组内按 id 排序） */
-    private static void addTabContents(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() != CHICKEN_TAB.getKey()) {
-            return;
-        }
-        event.accept(new ItemStack(ModItems.CATCHER.get()));
-        event.accept(new ItemStack(ModItems.CHICKEN_ANALYZER.get()));
-        event.accept(new ItemStack(ModItems.BREEDING_BOX.get()));
-        event.accept(new ItemStack(ModItems.GROWER.get()));
-        event.accept(new ItemStack(ModItems.NEST.get()));
-        // 流体蛋：数据包注册表 chickens:fluid_egg 里每个条目一个
-        event.getParameters().holders().lookupOrThrow(ChickenRegistries.FLUID_EGG).listElements()
-                .map(net.minecraft.core.Holder::value)
-                .forEach(entry -> {
-                    net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluid =
-                            BreedLookups.fluidHolderOf(event.getParameters().holders(), entry.fluid());
-                    if (fluid != null) {
-                        ItemStack fluidEgg = new ItemStack(ModItems.FLUID_EGG.get());
-                        fluidEgg.set(ModDataComponents.FLUID.get(), fluid);
-                        event.accept(fluidEgg);
-                    }
-                });
-        // 16 种染色蛋（平均色见 DyeEggColors，与配方里的 rgb 一致）
-        for (net.minecraft.world.item.DyeColor dye : net.minecraft.world.item.DyeColor.values()) {
-            event.accept(org.abstruck.chickens.item.DyeEggColors.stack(dye));
-        }
-        event.accept(new ItemStack(ModItems.CHICKEN.get()));
-        event.getParameters().holders().lookupOrThrow(ChickenRegistries.BREED).listElements()
-                .sorted(java.util.Comparator.<net.minecraft.core.Holder<org.abstruck.chickens.breed.ChickenBreed>>comparingInt(
-                                holder -> holder.value().tier())
-                        .thenComparing(holder -> holder.getKey().location()))
-                .forEach(holder -> {
-                    ItemStack stack = new ItemStack(ModItems.CHICKEN.get());
-                    stack.set(ModDataComponents.BREED.get(), holder.getKey().location());
-                    event.accept(stack);
-                });
-    }
-
 }

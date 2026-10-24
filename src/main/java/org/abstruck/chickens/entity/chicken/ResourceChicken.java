@@ -1,9 +1,7 @@
 package org.abstruck.chickens.entity.chicken;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -15,15 +13,18 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import org.abstruck.chickens.registry.ModEntities;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.core.BlockPos;
 import org.abstruck.chickens.breed.BreedLookups;
 import org.abstruck.chickens.breed.ChickenBreed;
 import org.abstruck.chickens.config.ChickenConfig;
-import org.abstruck.chickens.registry.ModDataComponents;
+import org.abstruck.chickens.item.ItemData;
+import org.abstruck.chickens.registry.ModRegistry;
 import org.slf4j.Logger;
 
 /**
@@ -33,12 +34,16 @@ import org.slf4j.Logger;
 public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public static final ResourceLocation DEFAULT_BREED = ResourceLocation.fromNamespaceAndPath("chickens", "flint");
+    public static final ResourceLocation DEFAULT_BREED = new ResourceLocation("chickens", "flint");
 
-    private static final EntityDataAccessor<String> DATA_BREED = SynchedEntityData.defineId(ResourceChicken.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<Byte> DATA_GROWTH = SynchedEntityData.defineId(ResourceChicken.class, EntityDataSerializers.BYTE);
-    private static final EntityDataAccessor<Byte> DATA_GAIN = SynchedEntityData.defineId(ResourceChicken.class, EntityDataSerializers.BYTE);
-    private static final EntityDataAccessor<Byte> DATA_STRENGTH = SynchedEntityData.defineId(ResourceChicken.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<String> DATA_BREED =
+            SynchedEntityData.defineId(ResourceChicken.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Byte> DATA_GROWTH =
+            SynchedEntityData.defineId(ResourceChicken.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Byte> DATA_GAIN =
+            SynchedEntityData.defineId(ResourceChicken.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Byte> DATA_STRENGTH =
+            SynchedEntityData.defineId(ResourceChicken.class, EntityDataSerializers.BYTE);
 
     /** 距下次产出的剩余 tick；-1 = 尚未初始化（首次 tick 时按品种计算）。仅服务端使用。 */
     private int productionTimer = -1;
@@ -47,41 +52,38 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         super(type, level);
     }
 
-    /** 掉落表：品种 JSON 写了 loot 用之，否则显式指向原版鸡表
-     *  （1.21.1 未指定时懒生成 chickens:entities/resource_chicken——不存在 → 无掉落） */
+    /** 掉落表：品种数据写了 loot 用之，否则显式指向原版鸡表 */
     @Override
-    protected net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable> getDefaultLootTable() {
-        ChickenBreed breed = this.getBreed(this.level().registryAccess());
+    protected ResourceLocation getDefaultLootTable() {
+        ChickenBreed breed = this.getBreed();
         if (breed != null && breed.loot().isPresent()) {
-            return net.minecraft.resources.ResourceKey.create(
-                    net.minecraft.core.registries.Registries.LOOT_TABLE, breed.loot().get());
+            return breed.loot().get();
         }
-        return net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.LOOT_TABLE,
-                ResourceLocation.fromNamespaceAndPath("minecraft", "entities/chicken"));
+        return new ResourceLocation("minecraft", "entities/chicken");
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(DATA_BREED, DEFAULT_BREED.toString());
-        builder.define(DATA_GROWTH, (byte) 1);
-        builder.define(DATA_GAIN, (byte) 1);
-        builder.define(DATA_STRENGTH, (byte) 1);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(DATA_BREED, DEFAULT_BREED.toString());
+        this.entityData.define(DATA_GROWTH, (byte) 1);
+        this.entityData.define(DATA_GAIN, (byte) 1);
+        this.entityData.define(DATA_STRENGTH, (byte) 1);
     }
 
     public ResourceLocation getBreedId() {
         // 兼容旧存档：读取时懒归一化（silver_dye→light_gray、log→oak_log），写回时自动落成新 id
-        return BreedLookups.normalizeBreedId(ResourceLocation.parse(this.entityData.get(DATA_BREED)));
+        ResourceLocation id = ResourceLocation.tryParse(this.entityData.get(DATA_BREED));
+        return id == null ? DEFAULT_BREED : BreedLookups.normalizeBreedId(id);
     }
 
     public void setBreed(ResourceLocation breedId) {
         this.entityData.set(DATA_BREED, breedId.toString());
     }
 
-    /** 从注册表解析品种数据；品种不存在（被数据包移除）返回 null */
-    public ChickenBreed getBreed(RegistryAccess access) {
-        return BreedLookups.breedRegistry(access).get(this.getBreedId());
+    /** 从数据内容解析品种；品种不存在（被数据包移除）返回 null */
+    public ChickenBreed getBreed() {
+        return BreedLookups.breed(this.getBreedId());
     }
 
     @Override
@@ -94,7 +96,7 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
     }
 
     public void setGrowth(byte value) {
-        this.entityData.set(DATA_GROWTH, (byte) Math.clamp(value, 1, 10));
+        this.entityData.set(DATA_GROWTH, (byte) Mth.clamp(value, 1, 10));
     }
 
     public byte getGain() {
@@ -102,7 +104,7 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
     }
 
     public void setGain(byte value) {
-        this.entityData.set(DATA_GAIN, (byte) Math.clamp(value, 1, 10));
+        this.entityData.set(DATA_GAIN, (byte) Mth.clamp(value, 1, 10));
     }
 
     public byte getStrength() {
@@ -110,7 +112,7 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
     }
 
     public void setStrength(byte value) {
-        this.entityData.set(DATA_STRENGTH, (byte) Math.clamp(value, 1, 10));
+        this.entityData.set(DATA_STRENGTH, (byte) Mth.clamp(value, 1, 10));
     }
 
     @Override
@@ -133,10 +135,9 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         }
     }
 
-    /** 品种粒子特效（仅客户端）：位置/速度公式与原版末影人一致；类型/概率/数量来自品种 JSON 的 particles 字段；
-     *  粒子 id 解析不到（如引用了未安装模组的粒子）时静默跳过 */
+    /** 品种粒子特效（仅客户端）：位置/速度公式与原版末影人一致；粒子 id 解析不到时静默跳过 */
     private void spawnBreedParticles() {
-        ChickenBreed breed = this.getBreed(this.level().registryAccess());
+        ChickenBreed breed = this.getBreed();
         if (breed == null || breed.particles().isEmpty()) {
             return;
         }
@@ -144,13 +145,15 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         if (this.random.nextFloat() >= config.chance()) {
             return;
         }
-        if (!(BuiltInRegistries.PARTICLE_TYPE.get(config.type()) instanceof ParticleOptions options)) {
+        if (!(net.minecraftforge.registries.ForgeRegistries.PARTICLE_TYPES.getValue(config.type())
+                instanceof ParticleOptions options)) {
             return;
         }
         for (int i = 0; i < config.count(); i++) {
             this.level().addParticle(options,
                     this.getRandomX(config.spread()), this.getRandomY() - 0.25, this.getRandomZ(config.spread()),
-                    (this.random.nextDouble() - 0.5) * 2.0, -this.random.nextDouble(), (this.random.nextDouble() - 0.5) * 2.0);
+                    (this.random.nextDouble() - 0.5) * 2.0, -this.random.nextDouble(),
+                    (this.random.nextDouble() - 0.5) * 2.0);
         }
     }
 
@@ -159,23 +162,22 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         return this.productionTimer;
     }
 
-    /** 产出间隔：原版下蛋同款随机（6000~11999 tick）÷ (1 + growth × 系数)，下限 1 秒；
-     *  实体鸡不读品种 JSON 的 interval（interval 只影响鸡窝方块） */
+    /** 产出间隔：原版下蛋同款随机（6000~11999 tick）÷ (1 + growth × 系数)，下限 1 秒 */
     private int computeProductionInterval() {
         double base = this.random.nextInt(6000) + 6000;
         double growthFactor = 1.0 + this.getGrowth() * ChickenConfig.GROWTH_INTERVAL_FACTOR.get();
-        return Math.max(20, (int) Math.round(base * ChickenConfig.PRODUCTION_INTERVAL_MULTIPLIER.get() / growthFactor));
+        return Math.max(20, (int) Math.round(
+                base * ChickenConfig.PRODUCTION_INTERVAL_MULTIPLIER.get() / growthFactor));
     }
 
     private void produce() {
-        RegistryAccess access = this.level().registryAccess();
-        ChickenBreed breed = this.getBreed(access);
+        ChickenBreed breed = this.getBreed();
         if (breed == null) {
-            LOGGER.warn("[chickens] 产出失败：无法解析品种 {}（注册表为空？）", this.getBreedId());
+            LOGGER.warn("[chickens] 产出失败：无法解析品种 {}（数据为空？）", this.getBreedId());
             return;
         }
         ChickenBreed.Product product = BreedLookups.pickOutputItem(breed, this.getStrength(), this.random);
-        Item item = BreedLookups.resolveItem(access, product.item(), this.random);
+        Item item = BreedLookups.resolveItem(product.item(), this.random);
         if (item == null) {
             return;
         }
@@ -184,14 +186,15 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         int count = Math.max(1, base + bonus);
         ItemStack stack = new ItemStack(item, count);
         product.fluid().ifPresent(fluidRef -> {
-            net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluid =
-                    BreedLookups.fluidHolderOf(access, fluidRef, this.random);
+            net.minecraft.world.level.material.Fluid fluid = BreedLookups.fluidOf(fluidRef, this.random);
             if (fluid != null) {
-                stack.set(ModDataComponents.FLUID.get(), fluid);
+                ItemData.setFluid(stack,
+                        net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid));
             }
         });
         this.spawnAtLocation(stack);
-        this.playSound(SoundEvents.CHICKEN_EGG, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+        this.playSound(SoundEvents.CHICKEN_EGG, 1.0F,
+                (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
     }
 
     @Override
@@ -199,13 +202,12 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
         return false;
     }
 
-    /** 原版 Animal 在非草地返回路径光照成本——下界黑暗处为负值，导致鸡永远无法通过生成检查；
+    /** 原版 Animal 在非草地返回负的路径光照成本——下界黑暗处导致鸡永远无法通过生成检查；
      *  下界/末地强制返回 0（允许黑暗中生成），主世界保持原版动物行为 */
     @Override
-    public float getWalkTargetValue(net.minecraft.core.BlockPos pos, net.minecraft.world.level.LevelReader level) {
+    public float getWalkTargetValue(BlockPos pos, LevelReader level) {
         if (level instanceof ServerLevel serverLevel
-                && (serverLevel.dimension() == net.minecraft.world.level.Level.NETHER
-                || serverLevel.dimension() == net.minecraft.world.level.Level.END)) {
+                && (serverLevel.dimension() == Level.NETHER || serverLevel.dimension() == Level.END)) {
             return 0.0F;
         }
         return super.getWalkTargetValue(pos, level);
@@ -226,13 +228,12 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
 
     @Override
     public ResourceChicken getBreedOffspring(ServerLevel level, AgeableMob otherParent) {
-        ResourceChicken child = ModEntities.RESOURCE_CHICKEN.get().create(level);
+        ResourceChicken child = ModRegistry.RESOURCE_CHICKEN.get().create(level);
         if (child == null) {
             return null;
         }
         if (otherParent instanceof ResourceChicken other) {
-            ChickenGenetics.OffspringData data =
-                    ChickenGenetics.create(this, other, level.registryAccess(), level.random);
+            ChickenGenetics.OffspringData data = ChickenGenetics.create(this, other, level.random);
             child.setBreed(data.breed());
             child.setGrowth(data.growth());
             child.setGain(data.gain());
@@ -263,7 +264,10 @@ public class ResourceChicken extends net.minecraft.world.entity.animal.Chicken {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         if (tag.contains("Breed")) {
-            this.setBreed(ResourceLocation.parse(tag.getString("Breed")));
+            ResourceLocation id = ResourceLocation.tryParse(tag.getString("Breed"));
+            if (id != null) {
+                this.setBreed(id);
+            }
         }
         // 缺失键读取 0，被 setter 钳制回 1，旧存档安全
         this.setGrowth(tag.getByte("Growth"));

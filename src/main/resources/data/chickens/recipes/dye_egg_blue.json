@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:egg"
+    },
+    {
+      "item": "minecraft:blue_dye"
+    }
+  ],
+  "result": {
+    "item": "chickens:dye_egg",
+    "count": 1,
+    "nbt": {
+      "Color": 2839204
+    }
+  }
+}

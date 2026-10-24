@@ -1,25 +1,26 @@
 package org.abstruck.chickens.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.block.state.BlockState;
 import org.abstruck.chickens.Chickens;
 import org.abstruck.chickens.item.DyeEggColors;
+import org.abstruck.chickens.item.ItemData;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -28,7 +29,7 @@ import java.util.Map;
 
 /**
  * 染料蛋模型：把原版蛋模型的 sprite 换成 16 张「按染料调色板生成」的静态贴图
- * （见 tools/gen_dye_egg_textures.py），由 dyed_color 组件决定用哪张，不再乘色。
+ * （见 tools/gen_dye_egg_textures.py），由物品 NBT 的 {@code Color} 决定用哪张，不再乘色。
  * 颜色无法识别时回退到白色蛋贴图。
  */
 public final class DyeEggBakedModel implements BakedModel {
@@ -43,24 +44,20 @@ public final class DyeEggBakedModel implements BakedModel {
         this.fallback = fallback;
     }
 
-    /** 烘焙完成时调用：为 16 种颜色各生成一份换过贴图的模型（sprite 必须从事件的贴图函数取，此时图集还没上传） */
-    public static BakedModel create(BakedModel delegate,
-                                    java.util.function.Function<net.minecraft.client.resources.model.Material,
-                                            TextureAtlasSprite> textureGetter) {
+    /** 烘焙完成时调用：为 16 种颜色各生成一份换过贴图的模型（1.19.2 此时图集已上传，可直接取 sprite） */
+    public static BakedModel create(BakedModel delegate) {
         // 平面物品模型的面存放在 null 方向（ItemRenderer 最后一步就是取 null 方向的面）
         List<BakedQuad> baseQuads = delegate.getQuads(null, null, RandomSource.create(42L));
         if (baseQuads.isEmpty()) {
             return delegate;
         }
+        var atlas = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS);
         Map<DyeColor, BakedModel> variants = new EnumMap<>(DyeColor.class);
         for (DyeColor dye : DyeColor.values()) {
-            ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(Chickens.MODID,
-                    "item/dye_egg/" + dye.getName());
-            TextureAtlasSprite sprite = textureGetter.apply(
-                    new net.minecraft.client.resources.model.Material(InventoryMenu.BLOCK_ATLAS, texture));
+            TextureAtlasSprite sprite = atlas.apply(new ResourceLocation(Chickens.MODID,
+                    "item/dye_egg/" + dye.getName()));
             // 贴图缺失时退回原版蛋模型，避免整个物品变成粉黑格
-            if (sprite.contents().name().equals(
-                    net.minecraft.client.renderer.texture.MissingTextureAtlasSprite.getLocation())) {
+            if (sprite == null || sprite.contents().name().equals(MissingTextureAtlasSprite.getLocation())) {
                 return delegate;
             }
             List<BakedQuad> quads = new ArrayList<>(baseQuads.size());
@@ -90,9 +87,9 @@ public final class DyeEggBakedModel implements BakedModel {
     }
 
     private BakedModel variantFor(ItemStack stack) {
-        DyedItemColor color = stack.get(DataComponents.DYED_COLOR);
-        if (color != null) {
-            DyeColor dye = DyeEggColors.dyeOf(color.rgb());
+        int color = ItemData.getColor(stack);
+        if (color >= 0) {
+            DyeColor dye = DyeEggColors.dyeOf(color);
             BakedModel model = dye != null ? this.variants.get(dye) : null;
             if (model != null) {
                 return model;
@@ -142,12 +139,13 @@ public final class DyeEggBakedModel implements BakedModel {
     }
 
     @Override
-    public BakedModel applyTransform(ItemDisplayContext context, PoseStack poseStack, boolean applyLeftHandTransform) {
+    public BakedModel applyTransform(ItemDisplayContext context, PoseStack poseStack,
+                                     boolean applyLeftHandTransform) {
         this.delegate.applyTransform(context, poseStack, applyLeftHandTransform);
         return this;
     }
 
-    /** dyed_color → 对应颜色的模型 */
+    /** 物品颜色 NBT → 对应颜色的模型 */
     private static final class ColorOverrides extends ItemOverrides {
         private final DyeEggBakedModel owner;
 
@@ -215,7 +213,8 @@ public final class DyeEggBakedModel implements BakedModel {
         }
 
         @Override
-        public BakedModel applyTransform(ItemDisplayContext context, PoseStack poseStack, boolean applyLeftHandTransform) {
+        public BakedModel applyTransform(ItemDisplayContext context, PoseStack poseStack,
+                                         boolean applyLeftHandTransform) {
             this.delegate.applyTransform(context, poseStack, applyLeftHandTransform);
             return this;
         }

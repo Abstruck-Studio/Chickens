@@ -1,33 +1,33 @@
 package org.abstruck.chickens.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
+import org.joml.Vector3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.abstruck.chickens.Chickens;
 import org.abstruck.chickens.block.breedingbox.BreedingBoxBlockEntity;
 import org.abstruck.chickens.block.grower.GrowerBlockEntity;
 import org.abstruck.chickens.block.nest.NestBlockEntity;
-import org.abstruck.chickens.registry.ModBlockEntities;
+import org.abstruck.chickens.registry.ModRegistry;
 
 /**
  * 三个设施方块的方块内渲染（原版箱子同款架构）：方块 getRenderShape = ENTITYBLOCK_ANIMATED
- * 跳过默认方块渲染，改由本 BER 统一渲染——方块模型所有面（含内壁）都用方块自身位置的世界光照
- * （默认逐面取法线方向邻格光照，围栏式模型贴实体方块时对侧内壁会全黑）；鸡槽物品画实体鸡模型。
+ * 跳过默认方块渲染，改由本 BER 统一渲染——方块模型所有面（含内壁）都用方块自身位置的世界光照；
+ * 鸡槽物品画实体鸡模型。
  */
 public final class ChickenBoxRenderer {
     /** 外层缩放（叠加物品渲染内部的 0.9）：整鸡约 0.72 格高 */
@@ -50,16 +50,17 @@ public final class ChickenBoxRenderer {
 
     /** 在方块中心渲染鸡槽物品，鸡面朝方块正面（facing），光照与大世界鸡一致 */
     private static void renderChickenItem(ItemStack stack, Direction facing, PoseStack pose,
-                                          MultiBufferSource buffer, int packedLight, int packedOverlay) {
+                                          MultiBufferSource buffer, int packedLight, int packedOverlay,
+                                          net.minecraft.world.level.Level level) {
         ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
         pose.pushPose();
         pose.translate(0.5D, CHICKEN_Y, 0.5D);
         // fixed 上下文与实体渲染管线各带一次 180° 旋转（互相抵消），
         // 外层补 180 - toYRot 使模型面（初始朝北）最终朝向 facing
-        pose.mulPose(Axis.YP.rotationDegrees(180.0F - facing.toYRot()));
+        pose.mulPose(new org.joml.Quaternionf().rotationY((float) Math.toRadians(180.0F - facing.toYRot())));
         pose.scale(SCALE, SCALE, SCALE);
         itemRenderer.renderStatic(stack, ItemDisplayContext.FIXED, packedLight,
-                packedOverlay, pose, buffer, Minecraft.getInstance().level, 0);
+                packedOverlay, pose, buffer, level, 0);
         pose.popPose();
     }
 
@@ -88,7 +89,7 @@ public final class ChickenBoxRenderer {
                 return;
             }
             renderChickenItem(stack, be.getBlockState().getValue(HorizontalDirectionalBlock.FACING),
-                    pose, buffer, packedLight, packedOverlay);
+                    pose, buffer, packedLight, packedOverlay, be.getLevel());
         }
     }
 
@@ -105,20 +106,22 @@ public final class ChickenBoxRenderer {
                 return;
             }
             renderChickenItem(stack, be.getBlockState().getValue(HorizontalDirectionalBlock.FACING),
-                    pose, buffer, packedLight, packedOverlay);
+                    pose, buffer, packedLight, packedOverlay, be.getLevel());
         }
     }
 
-    @EventBusSubscriber(modid = Chickens.MODID, value = Dist.CLIENT)
-    public static class Register {
+    /** 方块实体渲染器注册（仅客户端） */
+    @Mod.EventBusSubscriber(modid = Chickens.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static final class Register {
         private Register() {
         }
 
         @SubscribeEvent
-        public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerBlockEntityRenderer(ModBlockEntities.BREEDING_BOX.get(), BreedingBoxRenderer::new);
-            event.registerBlockEntityRenderer(ModBlockEntities.NEST.get(), NestRenderer::new);
-            event.registerBlockEntityRenderer(ModBlockEntities.GROWER.get(), GrowerRenderer::new);
+        public static void registerBlockEntityRenderers(
+                net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+            event.registerBlockEntityRenderer(ModRegistry.BREEDING_BOX_BE.get(), BreedingBoxRenderer::new);
+            event.registerBlockEntityRenderer(ModRegistry.NEST_BE.get(), NestRenderer::new);
+            event.registerBlockEntityRenderer(ModRegistry.GROWER_BE.get(), GrowerRenderer::new);
         }
     }
 }

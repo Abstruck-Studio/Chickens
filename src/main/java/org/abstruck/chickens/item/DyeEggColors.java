@@ -1,15 +1,13 @@
 package org.abstruck.chickens.item;
 
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.DyedItemColor;
-import org.abstruck.chickens.registry.ModItems;
+import org.abstruck.chickens.registry.ModRegistry;
 
 /**
  * 16 种染料蛋的「平均色」配色（数值取自 dye平均色.txt）：
- * 作为 {@code minecraft:dyed_color} 组件写入物品，并负责颜色 → 染料种类反查。
- * 旧版用原版染料纯色生成的染料蛋仍能被 {@link #dyeOf(int)} 识别，避免旧存档失效。
+ * 写入物品 NBT 的 {@code Color}，并负责颜色 → 染料种类反查。
+ * 旧版用原版染料纯色生成的染料蛋仍能被 {@link #dyeOf(int)} 识别。
  */
 public final class DyeEggColors {
     /** 下标即 {@link DyeColor#getId()} */
@@ -55,17 +53,17 @@ public final class DyeEggColors {
             }
         }
         for (DyeColor dye : DyeColor.values()) {
-            if ((dye.getTextureDiffuseColor() & 0xFFFFFF) == plain) {
+            if (DyeEggItem.rgbOf(dye) == plain) {
                 return dye;
             }
         }
         return null;
     }
 
-    /** 生成一个染色好的染料蛋物品 */
+    /** 生成一个带颜色的染料蛋物品 */
     public static ItemStack stack(DyeColor dye) {
-        ItemStack stack = new ItemStack(ModItems.DYE_EGG.get());
-        stack.set(DataComponents.DYED_COLOR, new DyedItemColor(rgb(dye), false));
+        ItemStack stack = new ItemStack(ModRegistry.DYE_EGG.get());
+        ItemData.setColor(stack, rgb(dye));
         return stack;
     }
 }

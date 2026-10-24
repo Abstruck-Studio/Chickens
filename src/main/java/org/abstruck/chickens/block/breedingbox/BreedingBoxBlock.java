@@ -1,10 +1,10 @@
 package org.abstruck.chickens.block.breedingbox;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
@@ -15,8 +15,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -44,18 +46,13 @@ public class BreedingBoxBlock extends HorizontalDirectionalBlock implements Enti
         builder.add(FACING, HAS_SEEDS, IS_BREEDING);
     }
 
-    @Override
-    protected MapCodec<BreedingBoxBlock> codec() {
-        return simpleCodec(BreedingBoxBlock::new);
-    }
-
     /** 渲染交给 BER 统一光照：围栏式模型的内壁不逐面取邻格光照（否则贴实体方块时对侧内壁全黑） */
     @Override
-    public net.minecraft.world.level.block.RenderShape getRenderShape(BlockState state) {
-        return net.minecraft.world.level.block.RenderShape.ENTITYBLOCK_ANIMATED;
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
-    /** 原版熔炉同款：放置时正面朝向玩家（HorizontalDirectionalBlock 本身无放置逻辑，FACING 恒为 NORTH） */
+    /** 原版熔炉同款：放置时正面朝向玩家 */
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
@@ -67,7 +64,8 @@ public class BreedingBoxBlock extends HorizontalDirectionalBlock implements Enti
     }
 
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
+                                                                 BlockEntityType<T> type) {
         if (level.isClientSide()) {
             return null;
         }
@@ -79,26 +77,32 @@ public class BreedingBoxBlock extends HorizontalDirectionalBlock implements Enti
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
+                                 InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(this.getMenuProvider(state, level, pos));
+            MenuProvider provider = this.getMenuProvider(state, level, pos);
+            if (provider != null) {
+                serverPlayer.openMenu(provider);
+            }
         }
         return InteractionResult.SUCCESS;
     }
 
     @Override
-    protected MenuProvider getMenuProvider(BlockState state, Level level, BlockPos pos) {
-        BreedingBoxBlockEntity be = (BreedingBoxBlockEntity) level.getBlockEntity(pos);
-        return new SimpleMenuProvider((containerId, inventory, player) ->
-                new BreedingBoxMenu(containerId, inventory, be), TITLE);
+    public MenuProvider getMenuProvider(BlockState state, Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof BreedingBoxBlockEntity be) {
+            return new SimpleMenuProvider((containerId, inventory, player) ->
+                    new BreedingBoxMenu(containerId, inventory, be), TITLE);
+        }
+        return null;
     }
 
     /** 拆除时掉落内容物 */
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof BreedingBoxBlockEntity box) {
             for (int i = 0; i < box.getItems().getSlots(); i++) {
                 ItemStack stack = box.getItems().getStackInSlot(i);

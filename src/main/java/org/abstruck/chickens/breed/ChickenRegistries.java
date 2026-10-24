@@ -1,33 +1,31 @@
 package org.abstruck.chickens.breed;
 
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import org.abstruck.chickens.Chickens;
 
-/** 数据包注册表的键与注册入口 */
+/**
+ * 四个「数据包注册表」的键。
+ *
+ * <p>1.21.1 用 {@code DataPackRegistryEvent.NewRegistry} 注册同步注册表；1.19.2 没有这套 API，
+ * 因此这里只保留注册表键（用于 {@code TagKey} 的命名空间），实际内容由 {@link ChickenData}
+ * 直接扫描 {@code data/<命名空间>/chickens/<类型>/*.json} 载入，并通过网络包同步给客户端。
+ * 注册表 id 与目录结构保持不变，数据包写法完全一致。</p>
+ */
 public final class ChickenRegistries {
     public static final ResourceKey<Registry<ChickenBreed>> BREED =
-            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "breed"));
+            ResourceKey.createRegistryKey(new ResourceLocation(Chickens.MODID, "breed"));
 
     public static final ResourceKey<Registry<MutationRule>> MUTATION =
-            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "mutation"));
+            ResourceKey.createRegistryKey(new ResourceLocation(Chickens.MODID, "mutation"));
 
     public static final ResourceKey<Registry<FluidEggEntry>> FLUID_EGG =
-            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "fluid_egg"));
+            ResourceKey.createRegistryKey(new ResourceLocation(Chickens.MODID, "fluid_egg"));
 
     public static final ResourceKey<Registry<SpawnRule>> SPAWN_RULE =
-            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "spawn_rule"));
+            ResourceKey.createRegistryKey(new ResourceLocation(Chickens.MODID, "spawn_rule"));
 
     private ChickenRegistries() {
-    }
-
-    public static void registerDataPackRegistries(DataPackRegistryEvent.NewRegistry event) {
-        event.dataPackRegistry(BREED, ChickenBreed.CODEC, ChickenBreed.CODEC);
-        event.dataPackRegistry(MUTATION, MutationRule.CODEC, MutationRule.CODEC);
-        event.dataPackRegistry(FLUID_EGG, FluidEggEntry.CODEC, FluidEggEntry.CODEC);
-        event.dataPackRegistry(SPAWN_RULE, SpawnRule.CODEC, SpawnRule.CODEC);
     }
 }

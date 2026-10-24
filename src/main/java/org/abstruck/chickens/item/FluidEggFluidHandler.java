@@ -2,15 +2,13 @@ package org.abstruck.chickens.item;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidType;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
-import org.abstruck.chickens.registry.ModDataComponents;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidType;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 /**
- * 流体蛋的流体能力（Capabilities.FluidHandler.ITEM）：1 桶（1000 mB）容量 = 组件里的流体，
- * 与原版桶及各类储罐（Create 分液池等）交互的通用通道；只能倒出不能装入；
+ * 流体蛋的流体能力（FluidHandler.ITEM）：1 桶（1000 mB）容量 = 物品里的流体，
+ * 与原版桶及各类储罐交互的通用通道；只能倒出不能装入；
  * EXECUTE 倒出后消耗 1 个蛋（FluidUtil 拿副本调 drain，再用 getContainer() 结果替换手部物品）。
  */
 public final class FluidEggFluidHandler implements IFluidHandlerItem {
@@ -54,7 +52,7 @@ public final class FluidEggFluidHandler implements IFluidHandlerItem {
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action) {
         Fluid fluid = this.fluid();
-        if (fluid == null || !fluid.isSame(resource.getFluid())) {
+        if (fluid == null || resource.isEmpty() || !fluid.isSame(resource.getFluid())) {
             return FluidStack.EMPTY;
         }
         return drain(Math.min(resource.getAmount(), FluidType.BUCKET_VOLUME), action);
@@ -74,7 +72,6 @@ public final class FluidEggFluidHandler implements IFluidHandlerItem {
     }
 
     private Fluid fluid() {
-        net.minecraft.core.Holder<Fluid> holder = this.stack.get(ModDataComponents.FLUID.get());
-        return holder != null ? holder.value() : null;
+        return ItemData.getFluid(this.stack);
     }
 }

@@ -1,9 +1,12 @@
 package org.abstruck.chickens.entity.chicken;
 
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import org.abstruck.chickens.breed.BreedLookups;
+import org.abstruck.chickens.breed.ChickenBreed;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * 繁殖遗传规则：
@@ -16,19 +19,18 @@ public final class ChickenGenetics {
     }
 
     /** 一对资源鸡的后代数据（品种 + 三维属性） */
-    public static OffspringData create(ResourceChicken parentA, ResourceChicken parentB,
-                                       RegistryAccess access, RandomSource random) {
+    public static OffspringData create(ResourceChicken parentA, ResourceChicken parentB, RandomSource random) {
         return create(parentA.getBreedId(),
                 new ChickenStats(parentA.getGrowth(), parentA.getGain(), parentA.getStrength()),
                 parentB.getBreedId(),
                 new ChickenStats(parentB.getGrowth(), parentB.getGain(), parentB.getStrength()),
-                access, random);
+                random);
     }
 
-    /** 数据版入口（巢箱配对等无实体场景用） */
+    /** 数据版入口（繁殖箱配对等无实体场景用） */
     public static OffspringData create(ResourceLocation breedA, ChickenStats statsA,
                                        ResourceLocation breedB, ChickenStats statsB,
-                                       RegistryAccess access, RandomSource random) {
+                                       RandomSource random) {
         if (breedA.equals(breedB)) {
             int growthBase = Math.max(statsA.growth(), statsB.growth());
             int gainBase = Math.max(statsA.gain(), statsB.gain());
@@ -46,22 +48,21 @@ public final class ChickenGenetics {
             }
             return new OffspringData(breedA, growth, gain, strength);
         }
-        var index = BreedLookups.mutationIndex(access);
-        var results = BreedLookups.findResults(index, breedA, breedB);
-        var mutated = BreedLookups.roll(access, results, breedA, breedB, random);
+        Optional<List<org.abstruck.chickens.breed.MutationRule.WeightedResult>> results =
+                BreedLookups.findResults(breedA, breedB);
+        Optional<ResourceLocation> mutated = BreedLookups.roll(results, breedA, breedB, random);
         if (mutated.isPresent()) {
             return new OffspringData(mutated.get(), (byte) 1, (byte) 1, (byte) 1);
         }
         // 未命中配方：优先 tier 较低的一方（防止用低级鸡蹭高级鸡提前解锁）
-        return new OffspringData(pickLowerTier(access, breedA, breedB, random), (byte) 1, (byte) 1, (byte) 1);
+        return new OffspringData(pickLowerTier(breedA, breedB, random), (byte) 1, (byte) 1, (byte) 1);
     }
 
     /** 无杂交配方时的回退：tier 较低者胜出，相同随机；解析不到的品种（被数据包移除）视为 tier 最高 */
-    private static ResourceLocation pickLowerTier(RegistryAccess access, ResourceLocation breedA,
-                                                  ResourceLocation breedB, RandomSource random) {
-        var registry = BreedLookups.breedRegistry(access);
-        var a = registry.get(breedA);
-        var b = registry.get(breedB);
+    private static ResourceLocation pickLowerTier(ResourceLocation breedA, ResourceLocation breedB,
+                                                  RandomSource random) {
+        ChickenBreed a = BreedLookups.breed(breedA);
+        ChickenBreed b = BreedLookups.breed(breedB);
         int tierA = a != null ? a.tier() : Integer.MAX_VALUE;
         int tierB = b != null ? b.tier() : Integer.MAX_VALUE;
         if (tierA < tierB) {
