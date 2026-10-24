@@ -31,15 +31,9 @@ public class DyeEggItem extends Item implements ProjectileItem {
         super(properties);
     }
 
-    /** 按 rgb 找对应 DyeColor（找不到返回 null）；两边都截断到低 24 位再比较 */
+    /** 按 rgb 找对应 DyeColor（找不到返回 null）；配色与反查见 {@link DyeEggColors} */
     public static DyeColor dyeColorOf(int rgb) {
-        int plain = rgb & 0xFFFFFF;
-        for (DyeColor dye : DyeColor.values()) {
-            if ((dye.getTextureDiffuseColor() & 0xFFFFFF) == plain) {
-                return dye;
-            }
-        }
-        return null;
+        return DyeEggColors.dyeOf(rgb);
     }
 
     @Override

@@ -99,13 +99,9 @@ public class Chickens {
                         event.accept(fluidEgg);
                     }
                 });
-        // 16 种染色蛋（rgb 统一截断低 24 位与配方一致）
+        // 16 种染色蛋（平均色见 DyeEggColors，与配方里的 rgb 一致）
         for (net.minecraft.world.item.DyeColor dye : net.minecraft.world.item.DyeColor.values()) {
-            ItemStack dyeEgg = new ItemStack(ModItems.DYE_EGG.get());
-            dyeEgg.set(net.minecraft.core.component.DataComponents.DYED_COLOR,
-                    new net.minecraft.world.item.component.DyedItemColor(
-                            dye.getTextureDiffuseColor() & 0xFFFFFF, false));
-            event.accept(dyeEgg);
+            event.accept(org.abstruck.chickens.item.DyeEggColors.stack(dye));
         }
         event.accept(new ItemStack(ModItems.CHICKEN.get()));
         event.getParameters().holders().lookupOrThrow(ChickenRegistries.BREED).listElements()

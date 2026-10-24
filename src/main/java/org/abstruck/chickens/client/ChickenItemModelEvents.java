@@ -18,16 +18,22 @@ import org.abstruck.chickens.registry.ModItems;
 public final class ChickenItemModelEvents {
     private static final ModelResourceLocation CHICKEN_ITEM =
             new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "chicken"), "inventory");
+    private static final ModelResourceLocation DYE_EGG_ITEM =
+            new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(Chickens.MODID, "dye_egg"), "inventory");
 
     private ChickenItemModelEvents() {
     }
 
-    /** 把鸡物品模型换成定制渲染模型（isCustomRenderer = true） */
+    /** 鸡物品换成定制渲染模型（isCustomRenderer = true）；染料蛋换成按颜色选贴图的模型 */
     @SubscribeEvent
     public static void modifyBakingResult(ModelEvent.ModifyBakingResult event) {
-        BakedModel original = event.getModels().get(CHICKEN_ITEM);
-        if (original != null) {
-            event.getModels().put(CHICKEN_ITEM, new ChickenIconBakedModel(original));
+        BakedModel chicken = event.getModels().get(CHICKEN_ITEM);
+        if (chicken != null) {
+            event.getModels().put(CHICKEN_ITEM, new ChickenIconBakedModel(chicken));
+        }
+        BakedModel dyeEgg = event.getModels().get(DYE_EGG_ITEM);
+        if (dyeEgg != null) {
+            event.getModels().put(DYE_EGG_ITEM, DyeEggBakedModel.create(dyeEgg, event.getTextureGetter()));
         }
     }
 
@@ -55,15 +61,10 @@ public final class ChickenItemModelEvents {
         event.register(org.abstruck.chickens.registry.ModMenuTypes.NEST.get(), NestScreen::new);
     }
 
-    /** 染料蛋按 dyed_color、流体蛋按 chickens:fluid 组件染色；
+    /** 流体蛋按 chickens:fluid 组件染色（染料蛋颜色已烘进贴图，不再乘色）；
      *  返回值 0xAARRGGBB 必须补 alpha 位，否则物品透明 */
     @SubscribeEvent
     public static void registerItemColors(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item event) {
-        event.register((stack, tintIndex) -> {
-            net.minecraft.world.item.component.DyedItemColor color =
-                    stack.get(net.minecraft.core.component.DataComponents.DYED_COLOR);
-            return color != null ? 0xFF000000 | color.rgb() : 0xFFFFFFFF;
-        }, ModItems.DYE_EGG.get());
         event.register((stack, tintIndex) -> {
             net.minecraft.core.Holder<net.minecraft.world.level.material.Fluid> fluidHolder =
                     stack.get(ModDataComponents.FLUID.get());

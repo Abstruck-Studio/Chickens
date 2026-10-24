@@ -23,7 +23,7 @@ public class ProduceRecipeCategory extends AbstractRecipeCategory<ProduceRecipe>
     private static final int X = 2;
 
     public ProduceRecipeCategory(mezz.jei.api.gui.drawable.IDrawable icon) {
-        super(TYPE, Component.translatable("jei.chickens.produce"), icon, 162, 60);
+        super(TYPE, Component.translatable("jei.chickens.produce"), icon, 162, 64);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ProduceRecipeCategory extends AbstractRecipeCategory<ProduceRecipe>
         for (int i = 0; i < outputs.size(); i++) {
             ProduceRecipe.Output output = outputs.get(i);
             int pct = output.weight() * 100 / total;
-            guiGraphics.drawString(font, pct + "%", X + 36 + i * 26, 42, 0xFF3F3F3F, false);
+            ChickensJeiPlugin.drawChance(guiGraphics, pct + "%", X + 36 + i * 26, 20);
         }
     }
 }

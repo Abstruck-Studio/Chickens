@@ -24,7 +24,7 @@ public class MutationRecipeCategory extends AbstractRecipeCategory<MutationRecip
     private static final int X = 16;
 
     public MutationRecipeCategory(mezz.jei.api.gui.drawable.IDrawable icon) {
-        super(TYPE, Component.translatable("jei.chickens.mutation"), icon, 162, 60);
+        super(TYPE, Component.translatable("jei.chickens.mutation"), icon, 162, 64);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class MutationRecipeCategory extends AbstractRecipeCategory<MutationRecip
         for (int i = 0; i < results.size(); i++) {
             MutationRule.WeightedResult result = results.get(i);
             String pct = String.format("%.0f%%", result.weight() / total * 100);
-            guiGraphics.drawString(font, pct, X + 72 + i * 26, 42, 0xFF3F3F3F, false);
+            ChickensJeiPlugin.drawChance(guiGraphics, pct, X + 72 + i * 26, 20);
         }
     }
 }

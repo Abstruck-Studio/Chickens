@@ -19,9 +19,9 @@ public final class ModItems {
     public static final DeferredItem<Item> CHICKEN =
             Chickens.ITEMS.register("chicken", () -> new ChickenItem(new Item.Properties().stacksTo(16)));
 
-    /** 鸡捕手：右键把鸡变成鸡物品（原版鸡按默认品种捕获） */
+    /** 鸡捕手：右键把鸡变成鸡物品（原版鸡按默认品种捕获）；128 点耐久，每次捕获消耗 1 点 */
     public static final DeferredItem<Item> CATCHER =
-            Chickens.ITEMS.register("catcher", () -> new ChickenCatcherItem(new Item.Properties()));
+            Chickens.ITEMS.register("catcher", () -> new ChickenCatcherItem(new Item.Properties().durability(128)));
 
     /** 方块物品（DeferredRegister.Blocks 不会自动注册，必须显式注册） */
     public static final DeferredItem<Item> BREEDING_BOX =

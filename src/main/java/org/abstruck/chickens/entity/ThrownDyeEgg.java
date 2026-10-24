@@ -12,6 +12,7 @@ import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import org.abstruck.chickens.entity.chicken.ResourceChicken;
+import org.abstruck.chickens.item.DyeEggColors;
 import org.abstruck.chickens.registry.ModDataComponents;
 import org.abstruck.chickens.registry.ModEntities;
 import org.abstruck.chickens.registry.ModItems;
@@ -72,18 +73,14 @@ public class ThrownDyeEgg extends ThrowableItemProjectile {
         }
     }
 
-    /** 颜色 → 品种 id（16 种染料鸡，id = DyeColor 名）；只比低 24 位（getTextureDiffuseColor 带 alpha 位） */
+    /** 颜色 → 品种 id（16 种染料鸡，id = DyeColor 名），配色见 {@link DyeEggColors} */
     private static ResourceLocation breedFromColor(ItemStack stack) {
         DyedItemColor color = stack.get(net.minecraft.core.component.DataComponents.DYED_COLOR);
-        if (color == null) {
+        net.minecraft.world.item.DyeColor dye =
+                color != null ? DyeEggColors.dyeOf(color.rgb()) : null;
+        if (dye == null) {
             return ResourceLocation.fromNamespaceAndPath("chickens", "white");
         }
-        int plain = color.rgb() & 0xFFFFFF;
-        for (net.minecraft.world.item.DyeColor dye : net.minecraft.world.item.DyeColor.values()) {
-            if ((dye.getTextureDiffuseColor() & 0xFFFFFF) == plain) {
-                return ResourceLocation.fromNamespaceAndPath("chickens", dye.getName());
-            }
-        }
-        return ResourceLocation.fromNamespaceAndPath("chickens", "white");
+        return ResourceLocation.fromNamespaceAndPath("chickens", dye.getName());
     }
 }

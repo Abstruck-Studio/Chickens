@@ -106,10 +106,7 @@ public class ChickensJeiPlugin implements IModPlugin {
             }
         }
         for (DyeColor dye : DyeColor.values()) {
-            ItemStack stack = new ItemStack(ModItems.DYE_EGG.get());
-            stack.set(net.minecraft.core.component.DataComponents.DYED_COLOR,
-                    new DyedItemColor(dye.getTextureDiffuseColor() & 0xFFFFFF, false));
-            extras.add(stack);
+            extras.add(org.abstruck.chickens.item.DyeEggColors.stack(dye));
         }
         registration.addExtraItemStacks(extras);
     }
@@ -274,5 +271,12 @@ public class ChickensJeiPlugin implements IModPlugin {
     /** 结果表总权重（供分类绘制概率文本用） */
     public static double totalWeight(List<MutationRule.WeightedResult> results) {
         return results.stream().mapToDouble(MutationRule.WeightedResult::weight).sum();
+    }
+
+    /** 输出槽正下方居中绘制概率文本：槽位 18×18，槽顶 y + 18 即槽底，再留 5px 间距，字体高 9px */
+    public static void drawChance(net.minecraft.client.gui.GuiGraphics guiGraphics, String text, int slotX, int slotTop) {
+        var font = Minecraft.getInstance().font;
+        int x = slotX + 9 - font.width(text) / 2;
+        guiGraphics.drawString(font, text, x, slotTop + 18 + 5, 0xFF3F3F3F, false);
     }
 }
